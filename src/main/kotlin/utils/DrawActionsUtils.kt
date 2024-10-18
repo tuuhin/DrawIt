@@ -3,24 +3,25 @@ package utils
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.res.painterResource
+import com.eva.draw_it.drawit.generated.resources.*
 import models.ActionBarActions
+import org.jetbrains.compose.resources.painterResource
 
 val ActionBarActions.actionPainter: Painter
     @Composable
     get() = when (this) {
-        ActionBarActions.ACTION_ARROW -> painterResource("images/ic_arrow.svg")
-        ActionBarActions.ACTION_DIAMOND -> painterResource("images/ic_rhombus.svg")
-        ActionBarActions.ACTION_DRAW -> painterResource("images/ic_pen.svg")
-        ActionBarActions.ACTION_ELLIPSE -> painterResource("images/ic_circle.svg")
-        ActionBarActions.ACTION_ERASER -> painterResource("images/ic_eraser.svg")
-        ActionBarActions.ACTION_IMAGE -> painterResource("images/ic_image.svg")
-        ActionBarActions.ACTION_LINE -> painterResource("images/ic_dash.svg")
-        ActionBarActions.ACTION_RECT -> painterResource("images/ic_square.svg")
-        ActionBarActions.ACTION_SELECT -> painterResource("images/ic_pointer.svg")
-        ActionBarActions.ACTION_TEXT -> painterResource("images/ic_text.svg")
-        ActionBarActions.ACTION_LOCK_CANVAS -> painterResource("images/ic_lock.svg")
-        ActionBarActions.ACTION_HAND -> painterResource("images/ic_hand.svg")
+        ActionBarActions.ACTION_ARROW -> painterResource(Res.drawable.ic_arrow)
+        ActionBarActions.ACTION_DIAMOND -> painterResource(Res.drawable.ic_rhombus)
+        ActionBarActions.ACTION_DRAW -> painterResource(Res.drawable.ic_pen)
+        ActionBarActions.ACTION_ELLIPSE -> painterResource(Res.drawable.ic_circle)
+        ActionBarActions.ACTION_ERASER -> painterResource(Res.drawable.ic_eraser)
+        ActionBarActions.ACTION_IMAGE -> painterResource(Res.drawable.ic_image)
+        ActionBarActions.ACTION_LINE -> painterResource(Res.drawable.ic_dash)
+        ActionBarActions.ACTION_RECT -> painterResource(Res.drawable.ic_square)
+        ActionBarActions.ACTION_SELECT -> painterResource(Res.drawable.ic_pointer)
+        ActionBarActions.ACTION_TEXT -> painterResource(Res.drawable.ic_text)
+        ActionBarActions.ACTION_LOCK_CANVAS -> painterResource(Res.drawable.ic_lock)
+        ActionBarActions.ACTION_HAND -> painterResource(Res.drawable.ic_hand)
     }
 
 val ActionBarActions.keyboardShortcuts: Collection<Key>
