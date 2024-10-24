@@ -12,9 +12,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import models.ActionBarActions
 import models.ActionBarState
-import presentation.ui.DrawItAppTheme
+import models.actions.ActionBarActions
+import models.actions.CanvasDrawAction
+import models.actions.CanvasUtilAction
+import ui.DrawItAppTheme
 
 @Composable
 fun CanvasActionsTopBar(
@@ -35,22 +37,23 @@ fun CanvasActionsTopBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // lock action has its own speciality to keep differently
-            ActionBarActionButton(
-                isSelected = state.isActionLocked,
-                action = ActionBarActions.ACTION_LOCK_CANVAS,
-                onClickOrShortcut = { onActionChange(ActionBarActions.ACTION_LOCK_CANVAS) }
-            )
-            VerticalDivider(thickness = 2.dp)
+            CanvasUtilAction.entries.forEach { action ->
+                ActionBarActionButton(
+                    isSelected = state.isActionLocked,
+                    action = action,
+                    onClickOrShortcut = { onActionChange(action) }
+                )
+                if (action == CanvasUtilAction.ACTION_LOCK_CANVAS)
+                    VerticalDivider(thickness = 2.dp)
+            }
             // other actions
-            ActionBarActions.entries.filterNot { it == ActionBarActions.ACTION_LOCK_CANVAS }
-                .sortedBy { it.seqNo }
-                .forEach { action ->
-                    ActionBarActionButton(
-                        isSelected = state.selectedAction == action,
-                        action = action,
-                        onClickOrShortcut = { onActionChange(action) }
-                    )
-                }
+            CanvasDrawAction.entries.sortedBy { it.seqNo }.forEach { action ->
+                ActionBarActionButton(
+                    isSelected = state.selectedDrawAction == action,
+                    action = action,
+                    onClickOrShortcut = { onActionChange(action) }
+                )
+            }
         }
     }
 }
@@ -58,8 +61,8 @@ fun CanvasActionsTopBar(
 @Preview
 @Composable
 fun ActionBarPreview() = DrawItAppTheme {
-    CanvasActionsTopBar(
-        state = ActionBarState(),
-        onActionChange = {}
-    )
+        CanvasActionsTopBar(
+            state = ActionBarState(),
+            onActionChange = {}
+        )
 }

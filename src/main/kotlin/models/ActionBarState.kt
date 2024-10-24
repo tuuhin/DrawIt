@@ -1,6 +1,8 @@
 package models
 
+import models.actions.CanvasDrawAction
+
 data class ActionBarState(
     val isActionLocked: Boolean = false,
-    val selectedAction: ActionBarActions? = null,
+    val selectedDrawAction: CanvasDrawAction? = null,
 )

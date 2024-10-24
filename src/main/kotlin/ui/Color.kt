@@ -1,4 +1,4 @@
-package presentation.ui
+package ui
 
 import androidx.compose.ui.graphics.Color
 

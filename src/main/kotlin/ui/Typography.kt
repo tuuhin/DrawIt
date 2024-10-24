@@ -1,4 +1,4 @@
-package presentation.ui
+package ui
 
 import androidx.compose.material3.Typography
 

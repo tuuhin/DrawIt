@@ -13,8 +13,10 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import presentation.CanvasActionsTopBar
-import presentation.DrawingCanvas
-import presentation.ui.DrawItAppTheme
+import presentation.drawing.DrawingCanvas
+import presentation.menu_options.MenuOptionsSheet
+import presentation.style_picker.CanvasDrawStylePicker
+import ui.DrawItAppTheme
 
 
 fun main() = application {
@@ -31,23 +33,34 @@ fun main() = application {
     ) {
 
         val actionBarState by viewModel.actionBarState.collectAsState()
+        val drawStyle by viewModel.drawStyleState.collectAsState()
+        val canvasDrawObjects by viewModel.canvasObjects.collectAsState()
 
         DrawItAppTheme {
             Surface(
                 modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
             ) {
                 // this will be the canvas
                 DrawingCanvas(
                     state = actionBarState,
+                    drawnObjects = canvasDrawObjects,
+                    style = drawStyle,
+                    onCreateNewObject = viewModel::onAddNewObject,
                     modifier = Modifier.fillMaxSize()
                 )
                 // this will contain all the actions
                 Box(
-                    modifier = Modifier.fillMaxSize()
-                        .padding(12.dp)
+                    modifier = Modifier.fillMaxSize().padding(12.dp)
                 ) {
-
+                    // menu bar
+                    MenuOptionsSheet(modifier = Modifier.align(Alignment.TopStart))
+                    // draw style picker
+                    CanvasDrawStylePicker(
+                        style = drawStyle,
+                        onEvent = viewModel::onDrawStyleChange,
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    )
                     CanvasActionsTopBar(
                         state = actionBarState,
                         onActionChange = viewModel::onActionBarAction,

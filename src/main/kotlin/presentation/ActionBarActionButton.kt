@@ -27,11 +27,12 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import models.ActionBarActions
-import utils.actionPainter
-import utils.keyboardShortcuts
-import utils.overlayText
-import utils.tooltipText
+import mapper.actionPainter
+import mapper.keyboardShortcuts
+import mapper.overlayText
+import mapper.tooltipText
+import models.actions.ActionBarActions
+import models.actions.CanvasDrawAction
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -105,9 +106,9 @@ fun ActionBarActionButton(
                 tint = contentColor,
                 modifier = Modifier.padding(all = 8.dp).size(20.dp).align(Alignment.Center),
             )
-            action.overlayText?.let { shortcut ->
+            if (action is CanvasDrawAction) {
                 Text(
-                    text = shortcut,
+                    text = action.overlayText,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Thin,
                     color = contentColor,
