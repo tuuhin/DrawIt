@@ -16,16 +16,17 @@ import kotlin.math.sqrt
 fun DrawScope.drawCanvasObjects(
     boundingRect: Rect,
     action: CanvasDrawAction,
-    foregroundColor: Color = Color.Red,
-    backGroundColor: Color = Color.Yellow,
+    strokeColor: Color = Color.Red,
+    fillColor: Color = Color.Yellow,
     style: DrawStyle = Stroke(),
     alpha: Float = 1f,
 ) {
     when (action) {
         //oval
         CanvasDrawAction.ACTION_ELLIPSE -> {
+            // an outlined one
             drawOval(
-                color = foregroundColor,
+                color = strokeColor,
                 topLeft = boundingRect.topLeft,
                 size = boundingRect.size,
                 style = style,
@@ -33,13 +34,15 @@ fun DrawScope.drawCanvasObjects(
             )
         }
         // basic rect
-        CanvasDrawAction.ACTION_RECT -> drawRect(
-            color = foregroundColor,
-            topLeft = boundingRect.topLeft,
-            size = boundingRect.size,
-            style = style,
-            alpha = alpha,
-        )
+        CanvasDrawAction.ACTION_RECT -> {
+            drawRoundRect(
+                color = strokeColor,
+                topLeft = boundingRect.topLeft,
+                size = boundingRect.size,
+                style = style,
+                alpha = alpha,
+            )
+        }
         // its tilted rhombus
         CanvasDrawAction.ACTION_DIAMOND -> {
             val path = Path().apply {
@@ -56,13 +59,13 @@ fun DrawScope.drawCanvasObjects(
                 ).forEach { lineTo(it.x, it.y) }
             }
             // draw the path
-            drawPath(path, color = foregroundColor, style = style, alpha = alpha)
+            drawPath(path, color = strokeColor, style = style, alpha = alpha)
         }
         // draw a plain line
         CanvasDrawAction.ACTION_LINE -> {
             (style as? Stroke)?.let { stroke ->
                 drawLine(
-                    color = foregroundColor,
+                    color = strokeColor,
                     start = boundingRect.topLeft,
                     end = boundingRect.bottomRight,
                     strokeWidth = stroke.width,
@@ -71,7 +74,7 @@ fun DrawScope.drawCanvasObjects(
                     alpha = alpha,
                 )
             } ?: drawLine(
-                color = foregroundColor,
+                color = strokeColor,
                 start = boundingRect.topLeft,
                 end = boundingRect.bottomRight,
                 alpha = alpha,
@@ -96,7 +99,7 @@ fun DrawScope.drawCanvasObjects(
 
             (style as? Stroke)?.let { stroke ->
                 drawLine(
-                    color = foregroundColor,
+                    color = strokeColor,
                     start = boundingRect.topLeft,
                     end = boundingRect.bottomRight,
                     strokeWidth = stroke.width,
@@ -105,7 +108,7 @@ fun DrawScope.drawCanvasObjects(
                     alpha = alpha,
                 )
             } ?: drawLine(
-                color = foregroundColor,
+                color = strokeColor,
                 start = boundingRect.topLeft,
                 end = boundingRect.bottomRight,
                 alpha = alpha,
@@ -114,7 +117,7 @@ fun DrawScope.drawCanvasObjects(
             rotate(degrees = 30f, pivot = boundingRect.bottomRight) {
                 (style as? Stroke)?.let { stroke ->
                     drawLine(
-                        color = foregroundColor,
+                        color = strokeColor,
                         start = startOffset,
                         end = boundingRect.bottomRight,
                         strokeWidth = stroke.width,
@@ -123,7 +126,7 @@ fun DrawScope.drawCanvasObjects(
                         alpha = alpha,
                     )
                 } ?: drawLine(
-                    color = foregroundColor,
+                    color = strokeColor,
                     start = startOffset,
                     end = boundingRect.bottomRight,
                     alpha = alpha,
@@ -132,7 +135,7 @@ fun DrawScope.drawCanvasObjects(
             rotate(degrees = -30f, pivot = boundingRect.bottomRight) {
                 (style as? Stroke)?.let { stroke ->
                     drawLine(
-                        color = foregroundColor,
+                        color = strokeColor,
                         start = startOffset,
                         end = boundingRect.bottomRight,
                         strokeWidth = stroke.width,
@@ -141,7 +144,7 @@ fun DrawScope.drawCanvasObjects(
                         alpha = alpha,
                     )
                 } ?: drawLine(
-                    color = foregroundColor,
+                    color = strokeColor,
                     start = startOffset,
                     end = boundingRect.bottomRight,
                     alpha = alpha,

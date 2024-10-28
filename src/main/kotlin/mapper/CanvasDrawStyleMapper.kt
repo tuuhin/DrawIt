@@ -27,13 +27,13 @@ val CanvasColorOptions.backgroundColor: Color
     }
 
 fun PathEffectOptions.toPathEffect(
-    dottedIntervals: FloatArray = floatArrayOf(5f, 5f),
-    dashedIntervals: FloatArray = floatArrayOf(10f, 10f),
+    dottedInterval: Float = 5f,
+    dashedInterval: Float = 10f,
 ): PathEffect? {
     return when (this) {
         PathEffectOptions.SOLID -> null
-        PathEffectOptions.DASHED -> PathEffect.dashPathEffect(dashedIntervals)
-        PathEffectOptions.DOTTED -> PathEffect.dashPathEffect(dottedIntervals)
+        PathEffectOptions.DASHED -> PathEffect.dashPathEffect(intervals = List(2) { dashedInterval }.toFloatArray())
+        PathEffectOptions.DOTTED -> PathEffect.dashPathEffect(intervals = List(2) { dottedInterval }.toFloatArray())
     }
 }
 

@@ -87,7 +87,7 @@ fun CanvasDrawStylePicker(
     onEvent: (CanvasDrawStyleChangeEvent) -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
-    elevation: Dp = 4.dp,
+    elevation: Dp = 2.dp,
     shape: Shape = MaterialTheme.shapes.medium,
     optionTextStyle: TextStyle = MaterialTheme.typography.labelMedium,
     optionHeadingColor: Color = MaterialTheme.colorScheme.onSurface,

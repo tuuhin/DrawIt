@@ -56,9 +56,6 @@ fun PathEffectPicker(
                         .background(boxColor)
                         .padding(4.dp)
                         .drawBehind {
-
-                            val lineWidth = size.width * .5f
-
                             drawLine(
                                 color = onBoxColor,
                                 start = Offset(size.width * .25f, size.height * .5f),
@@ -66,8 +63,8 @@ fun PathEffectPicker(
                                 strokeWidth = StrokeWidthOption.THIN.width.toPx(),
                                 cap = StrokeCap.Round,
                                 pathEffect = pathEffectOption.toPathEffect(
-                                    dashedIntervals = floatArrayOf(lineWidth * .3f, lineWidth * .4f),
-                                    dottedIntervals = floatArrayOf(lineWidth * .2f, lineWidth * .2f)
+                                    dottedInterval = 2.dp.toPx(),
+                                    dashedInterval = 4.dp.toPx()
                                 )
                             )
                         },
