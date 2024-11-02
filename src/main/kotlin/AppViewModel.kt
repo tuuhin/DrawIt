@@ -11,10 +11,11 @@ import models.*
 import models.actions.ActionBarActions
 import models.actions.CanvasDrawAction
 import models.actions.CanvasUtilAction
+import kotlin.math.exp
 
-class AppViewModel() {
+class AppViewModel {
 
-    private val scope = CoroutineScope(Dispatchers.Swing + SupervisorJob())
+    private val viewModelScope: CoroutineScope = CoroutineScope(Dispatchers.Swing + SupervisorJob())
 
     private val _actionBarState = MutableStateFlow(ActionBarState())
     val actionBarState: StateFlow<ActionBarState>
@@ -47,7 +48,7 @@ class AppViewModel() {
             ) { undoEnabled, redoEnabled, pan, scale ->
                 CanvasPropertiesState(scale = scale, panedCanvas = pan, undoEnabled, redoEnabled)
             }.stateIn(
-                scope = scope,
+                scope = viewModelScope,
                 started = SharingStarted.Eagerly,
                 initialValue = CanvasPropertiesState()
             )
@@ -125,18 +126,21 @@ class AppViewModel() {
             }
 
             is CanvasPropertiesEvent.OnZoom -> {
-                val updatedAmount = event.amount.coerceIn(0.5f, 3f)
+                val scale = _canvasScale.value
+                val updatedAmount =  (scale * exp(event.amount * 0.2f)).coerceIn(0.5f, 3f)
                 _canvasScale.update { updatedAmount }
             }
 
             is CanvasPropertiesEvent.OnPanCanvas -> {
+                // -ve sign as we always want out values as negatives
+                _canvasPan.update { panAmount -> panAmount + event.amount }
             }
         }
     }
 
     fun cleanUp() {
         println("VIEW MODEL CLEARED ")
-        scope.cancel()
+        viewModelScope.cancel()
     }
 
 }

@@ -3,9 +3,8 @@ package presentation.drawing
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.PointerMatcher
-import androidx.compose.foundation.gestures.calculatePan
-import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.onDrag
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
@@ -19,7 +18,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import event.CanvasPropertiesEvent
@@ -29,6 +27,8 @@ import mapper.toPathEffect
 import mapper.width
 import models.*
 import ui.DrawItAppTheme
+import kotlin.math.abs
+import kotlin.math.sign
 
 @OptIn(
     ExperimentalFoundationApi::class,
@@ -44,11 +44,9 @@ fun DrawingCanvas(
     onCanvasPropertiesEvent: (CanvasPropertiesEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var drawStartOffset by remember(state) { mutableStateOf(Offset.Zero) }
-    var drawEndOffset by remember(state) { mutableStateOf(Offset.Zero) }
-    val updatedStyle by rememberUpdatedState(style)
-
-    val window = LocalWindowInfo.current
+    var startOffset by remember(state) { mutableStateOf(Offset.Zero) }
+    var endOffset by remember(state) { mutableStateOf(Offset.Zero) }
+    val styleState by rememberUpdatedState(style)
 
     val pointerIcon by remember(state.selectedDrawAction) {
         derivedStateOf {
@@ -57,112 +55,101 @@ fun DrawingCanvas(
         }
     }
 
-    Spacer(
-        modifier = modifier
-            .pointerHoverIcon(pointerIcon)
+
+    Box(
+        modifier = modifier.pointerHoverIcon(pointerIcon)
             .onPointerEvent(eventType = PointerEventType.Scroll) { event ->
                 val change = event.changes.firstOrNull() ?: return@onPointerEvent
+                val scrollDelta = change.scrollDelta * -1f
+                // FIXME: Fix the problems regrading proper scroll
 
-                val scrollDelta = change.scrollDelta
-                val containerSize = window.containerSize
-
-                val zoomAmount = event.calculateZoom()
-                val panAmount = event.calculatePan()
-
-                println("$scrollDelta $containerSize")
-//                println("$zoomAmount $panAmount ${change.scrollDelta}")
-
-//                onCanvasPropertiesEvent(CanvasPropertiesEvent.OnZoom(zoomAmount))
-//                onCanvasPropertiesEvent(CanvasPropertiesEvent.OnPanCanvas(containerSize, scrollDelta))
+                // zoom events are made when scroll delta y component is 1 or -1
+                if (abs(scrollDelta.y) == 1f) {
+                    val zoomSign = scrollDelta.y.sign
+                    onCanvasPropertiesEvent(CanvasPropertiesEvent.OnZoom(zoomSign))
+                }
+                onCanvasPropertiesEvent(CanvasPropertiesEvent.OnPanCanvas(scrollDelta.times(20.dp.toPx())))
             }
-            .onDrag(
-                matcher = PointerMatcher.mouse(PointerButton.Primary),
-                onDragStart = { start ->
-                    drawStartOffset = start
-                    drawEndOffset = start
-                },
-                onDragEnd = {
-                    // create and action
-                    state.selectedDrawAction?.let { drawAction ->
-                        val item = CanvasItemModel(
-                            start = drawStartOffset,
-                            end = drawEndOffset,
-                            type = drawAction,
-                            style = updatedStyle
-                        )
-                        // create a new object
-                        onCreateNewObject(item)
-                        // reset previous
-                        drawEndOffset = Offset.Zero
-                        drawStartOffset = Offset.Zero
-                    }
-                },
-                onDragCancel = {
-                    drawEndOffset = Offset.Zero
-                    drawStartOffset = Offset.Zero
-
-                },
-                onDrag = { amount ->
-                    drawEndOffset += amount
-                },
-            )
-            .drawBehind {
-                // this will draw the stuff
-                withTransform(
-                    transformBlock = {
-                        scale(scale = propertiesState.scale)
-                        translate(left = propertiesState.panedCanvas.x, top = propertiesState.panedCanvas.y)
+    ) {
+        Spacer(
+            modifier = Modifier.matchParentSize()
+                .onDrag(
+                    enabled = state.hasAction,
+                    matcher = PointerMatcher.mouse(PointerButton.Primary),
+                    onDragStart = { start ->
+                        startOffset = start
+                        endOffset = start
                     },
-                    drawBlock = {
-                        drawnObjects.objects.fastForEach { drawObject ->
-                            drawCanvasObjects(
-                                boundingRect = drawObject.boundingRect,
-                                action = drawObject.action,
-                                style = Stroke(
-                                    width = drawObject.strokeWidth.width.toPx(),
-                                    cap = StrokeCap.Round,
-                                    pathEffect = drawObject.pathEffect.toPathEffect(
-                                        dottedInterval = 6.dp.toPx(),
-                                        dashedInterval = 12.dp.toPx()
-                                    )
-                                ),
-                                strokeColor = drawObject.strokeColor.foregroundColor,
-                                fillColor = drawObject.background.backgroundColor,
-                                alpha = drawObject.alpha
-                            )
-                        }
-                    }
-                )
-            }.drawBehind {
-                withTransform(
-                    transformBlock = {
-                        scale(propertiesState.scale)
-                        translate(left = propertiesState.panedCanvas.x, top = propertiesState.panedCanvas.y)
-                    },
-                    drawBlock = {
+                    onDragEnd = {
+                        // create and action
                         state.selectedDrawAction?.let { drawAction ->
-                            drawCanvasObjects(
-                                boundingRect = Rect(drawStartOffset, drawEndOffset),
+                            val item = CanvasItemModel(
+                                start = startOffset - propertiesState.panedCanvas,
+                                end = endOffset - propertiesState.panedCanvas,
                                 action = drawAction,
-                                style = Stroke(
-                                    width = style.strokeOption.width.toPx(),
-                                    cap = StrokeCap.Round,
-                                    pathEffect = style.pathEffect.toPathEffect(
-                                        dottedInterval = 6.dp.toPx(),
-                                        dashedInterval = 12.dp.toPx()
-                                    )
-                                ),
-                                strokeColor = style.strokeColor.foregroundColor,
-                                fillColor = style.background.backgroundColor,
-                                alpha = style.alpha
+                                style = styleState,
                             )
+                            // create a new object
+                            onCreateNewObject(item)
+                            // reset previous
+                            endOffset = Offset.Zero
+                            startOffset = Offset.Zero
                         }
                     },
-                )
-            },
-    )
+                    onDragCancel = {
+                        endOffset = Offset.Zero
+                        startOffset = Offset.Zero
+                    },
+                    onDrag = { amount -> endOffset += amount },
+                ).drawBehind {
+                    // this will draw the stuff
+                    withTransform(
+                        transformBlock = {
+                            scale(scale = propertiesState.scale)
+                            translate(left = propertiesState.panedCanvas.x, top = propertiesState.panedCanvas.y)
+                        },
+                        drawBlock = {
+                            drawnObjects.objects.fastForEach { drawObject ->
+                                drawCanvasObjects(
+                                    boundingRect = drawObject.boundingRect,
+                                    action = drawObject.action,
+                                    style = Stroke(
+                                        width = drawObject.strokeWidth.width.toPx(),
+                                        cap = StrokeCap.Round,
+                                        pathEffect = drawObject.pathEffect.toPathEffect(
+                                            dottedInterval = 6.dp.toPx(),
+                                            dashedInterval = 12.dp.toPx()
+                                        )
+                                    ),
+                                    strokeColor = drawObject.strokeColor.foregroundColor,
+                                    fillColor = drawObject.background.backgroundColor,
+                                    alpha = drawObject.alpha
+                                )
+                            }
+                        }
+                    )
+                }.drawBehind {
+                    state.selectedDrawAction?.let { drawAction ->
+                        drawCanvasObjects(
+                            boundingRect = Rect(startOffset, endOffset),
+                            action = drawAction,
+                            style = Stroke(
+                                width = style.strokeOption.width.toPx(),
+                                cap = StrokeCap.Round,
+                                pathEffect = style.pathEffect.toPathEffect(
+                                    dottedInterval = 6.dp.toPx(),
+                                    dashedInterval = 12.dp.toPx()
+                                )
+                            ),
+                            strokeColor = style.strokeColor.foregroundColor,
+                            fillColor = style.background.backgroundColor,
+                            alpha = style.alpha
+                        )
+                    }
+                },
+        )
+    }
 }
-
 
 @Preview
 @Composable

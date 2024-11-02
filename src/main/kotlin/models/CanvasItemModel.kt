@@ -13,28 +13,22 @@ data class CanvasItemModel(
     val start: Offset,
     val end: Offset,
     val action: CanvasDrawAction,
-    val strokeColor: CanvasColorOptions = CanvasColorOptions.BASE,
-    val background: CanvasColorOptions = CanvasColorOptions.BASE,
-    val pathEffect: PathEffectOptions = PathEffectOptions.SOLID,
-    val strokeWidth: StrokeWidthOption = StrokeWidthOption.THIN,
-    val alpha: Float = 1f,
+    val style: CanvasDrawStyle,
 ) {
+    val strokeColor: CanvasColorOptions
+        get() = style.strokeColor
 
-    constructor(
-        start: Offset,
-        end: Offset,
-        type: CanvasDrawAction,
-        style: CanvasDrawStyle,
-    ) : this(
-        start = start,
-        end = end,
-        action = type,
-        strokeColor = style.strokeColor,
-        background = style.background,
-        pathEffect = style.pathEffect,
-        strokeWidth = style.strokeOption,
-        alpha = style.alpha
-    )
+    val background: CanvasColorOptions
+        get() = style.background
+
+    val pathEffect: PathEffectOptions
+        get() = style.pathEffect
+
+    val strokeWidth: StrokeWidthOption
+        get() = style.strokeOption
+
+    val alpha: Float
+        get() = style.alpha
 
     val boundingRect: Rect
         get() = Rect(start, end)

@@ -1,3 +1,4 @@
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -9,6 +10,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.unit.dp
 import presentation.CanvasActionsTopBar
 import presentation.drawing.DrawingCanvas
@@ -18,7 +20,6 @@ import presentation.style_picker.CanvasDrawStylePicker
 
 @Composable
 fun App() {
-
     val viewModel = remember { AppViewModel() }
 
     DisposableEffect(viewModel) {
@@ -62,11 +63,21 @@ fun App() {
                 modifier = Modifier.align(Alignment.BottomStart)
             )
             // draw style picker
-            CanvasDrawStylePicker(
-                style = drawStyle,
-                onEvent = viewModel::onDrawStyleChange,
-                modifier = Modifier.align(Alignment.CenterStart)
-            )
+            AnimatedVisibility(
+                visible = actionBarState.selectedDrawAction != null,
+                modifier = Modifier.align(Alignment.CenterStart),
+                enter = slideInHorizontally { width -> -width } + scaleIn(
+                    transformOrigin = TransformOrigin(pivotFractionX = 0f, pivotFractionY = .5f)
+                ),
+                exit = slideOutHorizontally { width -> -width } + scaleOut(
+                    transformOrigin = TransformOrigin(pivotFractionX = 0f, pivotFractionY = .5f)
+                )
+            ) {
+                CanvasDrawStylePicker(
+                    style = drawStyle,
+                    onEvent = viewModel::onDrawStyleChange,
+                )
+            }
             // top bar
             CanvasActionsTopBar(
                 state = actionBarState,
