@@ -10,4 +10,5 @@ sealed interface CanvasPropertiesEvent {
     data object OnResetZoom : CanvasPropertiesEvent
     data class OnZoom(val amount: Float) : CanvasPropertiesEvent
     data class OnPanCanvas(val amount: Offset) : CanvasPropertiesEvent
+    data object ToggleGridLinesVisibility : CanvasPropertiesEvent
 }

@@ -13,7 +13,8 @@ data class CanvasItemModel(
     val start: Offset,
     val end: Offset,
     val action: CanvasDrawAction,
-    val style: CanvasDrawStyle,
+    val style: CanvasDrawStyle = CanvasDrawStyle(),
+    val scale: Float = 1f,
 ) {
     val strokeColor: CanvasColorOptions
         get() = style.strokeColor
@@ -31,5 +32,5 @@ data class CanvasItemModel(
         get() = style.alpha
 
     val boundingRect: Rect
-        get() = Rect(start, end)
+        get() = Rect(start, end )
 }

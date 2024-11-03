@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -48,16 +49,22 @@ fun DrawingCanvas(
     var endOffset by remember(state) { mutableStateOf(Offset.Zero) }
     val styleState by rememberUpdatedState(style)
 
-    val pointerIcon by remember(state.selectedDrawAction) {
-        derivedStateOf {
-            state.selectedDrawAction?.let { PointerIcon.Crosshair }
-                ?: PointerIcon.Default
-        }
+    val pointerIcon = remember(state.selectedDrawAction) {
+        state.selectedDrawAction?.let { PointerIcon.Crosshair }
+            ?: PointerIcon.Default
     }
 
-
     Box(
-        modifier = modifier.pointerHoverIcon(pointerIcon)
+        modifier = modifier
+            .pointerHoverIcon(pointerIcon)
+            .onKeyEvent { event ->
+                val keyCtrlPlusComma =
+                    (event.isCtrlPressed && event.key == Key.Comma && event.type == KeyEventType.KeyDown)
+                if (keyCtrlPlusComma) {
+                    onCanvasPropertiesEvent(CanvasPropertiesEvent.ToggleGridLinesVisibility)
+                }
+                keyCtrlPlusComma
+            }
             .onPointerEvent(eventType = PointerEventType.Scroll) { event ->
                 val change = event.changes.firstOrNull() ?: return@onPointerEvent
                 val scrollDelta = change.scrollDelta * -1f
@@ -68,7 +75,7 @@ fun DrawingCanvas(
                     val zoomSign = scrollDelta.y.sign
                     onCanvasPropertiesEvent(CanvasPropertiesEvent.OnZoom(zoomSign))
                 }
-                onCanvasPropertiesEvent(CanvasPropertiesEvent.OnPanCanvas(scrollDelta.times(20.dp.toPx())))
+                onCanvasPropertiesEvent(CanvasPropertiesEvent.OnPanCanvas(scrollDelta.times(10.dp.toPx())))
             }
     ) {
         Spacer(
@@ -82,12 +89,13 @@ fun DrawingCanvas(
                     },
                     onDragEnd = {
                         // create and action
-                        state.selectedDrawAction?.let { drawAction ->
+                        state.selectedDrawAction?.let { action ->
                             val item = CanvasItemModel(
-                                start = startOffset - propertiesState.panedCanvas,
-                                end = endOffset - propertiesState.panedCanvas,
-                                action = drawAction,
+                                start = startOffset - propertiesState.pannedScaledOffset,
+                                end = endOffset - propertiesState.pannedScaledOffset,
+                                action = action,
                                 style = styleState,
+                                scale = propertiesState.scale
                             )
                             // create a new object
                             onCreateNewObject(item)
@@ -101,30 +109,34 @@ fun DrawingCanvas(
                         startOffset = Offset.Zero
                     },
                     onDrag = { amount -> endOffset += amount },
-                ).drawBehind {
+                )
+                .drawGraphLines(showGraph = propertiesState.showGraphLines)
+                .drawBehind {
                     // this will draw the stuff
                     withTransform(
                         transformBlock = {
-                            scale(scale = propertiesState.scale)
+                            scale(propertiesState.scale)
                             translate(left = propertiesState.panedCanvas.x, top = propertiesState.panedCanvas.y)
                         },
                         drawBlock = {
                             drawnObjects.objects.fastForEach { drawObject ->
-                                drawCanvasObjects(
-                                    boundingRect = drawObject.boundingRect,
-                                    action = drawObject.action,
-                                    style = Stroke(
-                                        width = drawObject.strokeWidth.width.toPx(),
-                                        cap = StrokeCap.Round,
-                                        pathEffect = drawObject.pathEffect.toPathEffect(
-                                            dottedInterval = 6.dp.toPx(),
-                                            dashedInterval = 12.dp.toPx()
-                                        )
-                                    ),
-                                    strokeColor = drawObject.strokeColor.foregroundColor,
-                                    fillColor = drawObject.background.backgroundColor,
-                                    alpha = drawObject.alpha
-                                )
+                                scale(1f / drawObject.scale) {
+                                    drawCanvasObjects(
+                                        boundingRect = drawObject.boundingRect,
+                                        action = drawObject.action,
+                                        style = Stroke(
+                                            width = drawObject.strokeWidth.width.toPx(),
+                                            cap = StrokeCap.Round,
+                                            pathEffect = drawObject.pathEffect.toPathEffect(
+                                                dottedInterval = 6.dp.toPx(),
+                                                dashedInterval = 12.dp.toPx()
+                                            )
+                                        ),
+                                        strokeColor = drawObject.strokeColor.foregroundColor,
+                                        fillColor = drawObject.background.backgroundColor,
+                                        alpha = drawObject.alpha
+                                    )
+                                }
                             }
                         }
                     )

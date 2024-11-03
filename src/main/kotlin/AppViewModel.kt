@@ -31,6 +31,7 @@ class AppViewModel {
 
     private val _canvasScale = MutableStateFlow(1f)
     private val _canvasPan = MutableStateFlow(Offset.Zero)
+    private val _showGridLines = MutableStateFlow(false)
 
     // change the object to queue as storing many redo objects is not better
     private val _redoObjects = MutableStateFlow(CanvasDrawnObjects())
@@ -44,9 +45,15 @@ class AppViewModel {
                 canvasObjectCount,
                 redoObjectCount,
                 _canvasPan,
-                _canvasScale
-            ) { undoEnabled, redoEnabled, pan, scale ->
-                CanvasPropertiesState(scale = scale, panedCanvas = pan, undoEnabled, redoEnabled)
+                _canvasScale, _showGridLines
+            ) { undoEnabled, redoEnabled, pan, scale, showGrid ->
+                CanvasPropertiesState(
+                    scale = scale,
+                    panedCanvas = pan,
+                    undoEnabled,
+                    redoEnabled,
+                    showGraphLines = showGrid
+                )
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
@@ -116,25 +123,26 @@ class AppViewModel {
 
             CanvasPropertiesEvent.OnResetZoom -> _canvasScale.update { 1f }
             CanvasPropertiesEvent.OnIncrementZoom -> {
-                val zoomAmt = (_canvasScale.value + .1f).coerceIn(.25f..3f)
+                val zoomAmt = (_canvasScale.value + .1f).coerceIn(.3f..3f)
                 _canvasScale.update { zoomAmt }
             }
 
             CanvasPropertiesEvent.OnDecrementZoom -> {
-                val zoomAmt = (_canvasScale.value - .1f).coerceIn(.25f..3f)
+                val zoomAmt = (_canvasScale.value - .1f).coerceIn(.3f..3f)
                 _canvasScale.update { zoomAmt }
             }
 
             is CanvasPropertiesEvent.OnZoom -> {
                 val scale = _canvasScale.value
-                val updatedAmount =  (scale * exp(event.amount * 0.2f)).coerceIn(0.5f, 3f)
+                val updatedAmount = (scale * exp(event.amount * 0.2f)).coerceIn(0.3f..3f)
                 _canvasScale.update { updatedAmount }
             }
 
             is CanvasPropertiesEvent.OnPanCanvas -> {
-                // -ve sign as we always want out values as negatives
                 _canvasPan.update { panAmount -> panAmount + event.amount }
             }
+
+            CanvasPropertiesEvent.ToggleGridLinesVisibility -> _showGridLines.update { it.not() }
         }
     }
 
