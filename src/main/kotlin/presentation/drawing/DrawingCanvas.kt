@@ -124,7 +124,7 @@ fun DrawingCanvas(
                                     drawCanvasObjects(
                                         boundingRect = drawObject.boundingRect,
                                         action = drawObject.action,
-                                        style = Stroke(
+                                        stroke = Stroke(
                                             width = drawObject.strokeWidth.width.toPx(),
                                             cap = StrokeCap.Round,
                                             pathEffect = drawObject.pathEffect.toPathEffect(
@@ -145,7 +145,7 @@ fun DrawingCanvas(
                         drawCanvasObjects(
                             boundingRect = Rect(startOffset, endOffset),
                             action = drawAction,
-                            style = Stroke(
+                            stroke = Stroke(
                                 width = style.strokeOption.width.toPx(),
                                 cap = StrokeCap.Round,
                                 pathEffect = style.pathEffect.toPathEffect(

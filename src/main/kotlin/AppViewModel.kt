@@ -79,7 +79,7 @@ class AppViewModel {
 
     fun onAddNewObject(newObject: CanvasItemModel) {
         _canvasObjects.update { objectModel ->
-            objectModel.copy(objects = objectModel.objects + newObject)
+            objectModel.copy(objects = objectModel.objects + newObject, selectedObject = newObject)
         }
     }
 
