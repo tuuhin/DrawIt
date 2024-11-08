@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import models.actions.CanvasDrawAction
 import models.canvas.CanvasColorOptions
+import models.canvas.CornerRoundnessOption
 import models.canvas.PathEffectOptions
 import models.canvas.StrokeWidthOption
 import java.util.*
@@ -31,6 +32,9 @@ data class CanvasItemModel(
     val alpha: Float
         get() = style.alpha
 
+    val isRounded: Boolean
+        get() = style.roundness == CornerRoundnessOption.ROUNDED
+
     val boundingRect: Rect
-        get() = Rect(start, end )
+        get() = Rect(start, end)
 }

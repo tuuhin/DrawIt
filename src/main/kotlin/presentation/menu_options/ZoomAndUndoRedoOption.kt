@@ -25,6 +25,7 @@ import com.eva.draw_it.drawit.generated.resources.*
 import event.CanvasPropertiesEvent
 import models.CanvasPropertiesState
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import ui.DrawItAppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +71,7 @@ fun ZoomAndUndoRedoOption(
                 ) {
                     Icon(
                         painter = painterResource(Res.drawable.ic_plus),
-                        contentDescription = "Plus",
+                        contentDescription = stringResource(Res.string.canvas_action_zoom_in),
                     )
                 }
                 VerticalDivider(modifier = Modifier.padding(start = 4.dp))
@@ -78,7 +79,7 @@ fun ZoomAndUndoRedoOption(
                     positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
                     tooltip = {
                         PlainTooltip {
-                            Text(text = "Reset Zoom")
+                            Text(text = stringResource(Res.string.canvas_reset_zoom))
                         }
                     },
                     state = rememberTooltipState()
@@ -102,7 +103,7 @@ fun ZoomAndUndoRedoOption(
                 ) {
                     Icon(
                         painter = painterResource(Res.drawable.ic_minus),
-                        contentDescription = "Minus",
+                        contentDescription = stringResource(Res.string.canvas_action_zoom_out),
                     )
                 }
             }
@@ -124,7 +125,7 @@ fun ZoomAndUndoRedoOption(
                 ) {
                     Icon(
                         painter = painterResource(Res.drawable.ic_undo),
-                        contentDescription = "Undo Option",
+                        contentDescription = stringResource(Res.string.canvas_action_undo),
                     )
                 }
                 VerticalDivider(modifier = Modifier.padding(horizontal = 4.dp))
@@ -135,7 +136,7 @@ fun ZoomAndUndoRedoOption(
                 ) {
                     Icon(
                         painter = painterResource(Res.drawable.ic_redo),
-                        contentDescription = "Redo Option",
+                        contentDescription = stringResource(Res.string.canvas_action_redo),
                     )
                 }
             }

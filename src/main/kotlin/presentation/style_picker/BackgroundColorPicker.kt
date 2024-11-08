@@ -14,8 +14,11 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.eva.draw_it.drawit.generated.resources.Res
+import com.eva.draw_it.drawit.generated.resources.style_option_fill_color
 import mapper.backgroundColor
 import models.canvas.CanvasColorOptions
+import org.jetbrains.compose.resources.stringResource
 import utils.thenIf
 
 @Composable
@@ -28,7 +31,7 @@ fun BackgroundColorPicker(
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            text = "Background",
+            text = stringResource(Res.string.style_option_fill_color),
             color = headingColor,
             style = headingStyle,
         )

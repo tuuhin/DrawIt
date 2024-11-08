@@ -27,6 +27,7 @@ import mapper.foregroundColor
 import mapper.toPathEffect
 import mapper.width
 import models.*
+import models.canvas.CornerRoundnessOption
 import ui.DrawItAppTheme
 import kotlin.math.abs
 import kotlin.math.sign
@@ -134,7 +135,8 @@ fun DrawingCanvas(
                                         ),
                                         strokeColor = drawObject.strokeColor.foregroundColor,
                                         fillColor = drawObject.background.backgroundColor,
-                                        alpha = drawObject.alpha
+                                        alpha = drawObject.alpha,
+                                        isRounded = drawObject.isRounded
                                     )
                                 }
                             }
@@ -155,7 +157,8 @@ fun DrawingCanvas(
                             ),
                             strokeColor = style.strokeColor.foregroundColor,
                             fillColor = style.background.backgroundColor,
-                            alpha = style.alpha
+                            alpha = style.alpha,
+                            isRounded = style.roundness == CornerRoundnessOption.ROUNDED
                         )
                     }
                 },

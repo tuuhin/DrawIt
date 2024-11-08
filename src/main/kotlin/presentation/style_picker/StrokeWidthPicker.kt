@@ -16,7 +16,10 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.eva.draw_it.drawit.generated.resources.Res
+import com.eva.draw_it.drawit.generated.resources.style_option_stroke_width
 import models.canvas.StrokeWidthOption
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun StrokeWidthPicker(
@@ -31,7 +34,7 @@ fun StrokeWidthPicker(
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
-            text = "Stroke width",
+            text = stringResource(Res.string.style_option_stroke_width),
             color = headingColor,
             style = headingStyle
         )

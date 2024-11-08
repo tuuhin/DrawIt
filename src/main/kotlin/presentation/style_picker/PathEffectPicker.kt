@@ -16,10 +16,13 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.eva.draw_it.drawit.generated.resources.Res
+import com.eva.draw_it.drawit.generated.resources.style_option_path_effect
 import mapper.toPathEffect
 import mapper.width
 import models.canvas.PathEffectOptions
 import models.canvas.StrokeWidthOption
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun PathEffectPicker(
@@ -31,7 +34,7 @@ fun PathEffectPicker(
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            text = "Stroke Style",
+            text = stringResource(Res.string.style_option_path_effect),
             color = headingColor,
             style = headingStyle,
         )

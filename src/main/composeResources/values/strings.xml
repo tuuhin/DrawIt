@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">DrawIt</string>
+    <string name="style_option_roundness_title">Roundness</string>
+    <string name="style_option_fill_color">Background</string>
+    <string name="style_option_stroke_color">Stroke Color</string>
+    <string name="style_option_opacity">Opacity</string>
+    <string name="style_option_path_effect">Stroke Style</string>
+    <string name="style_option_stroke_width">Stroke Width</string>
+    <string name="canvas_action_undo">Undo</string>
+    <string name="canvas_action_redo">Redo</string>
+    <string name="canvas_action_zoom_in">ZoomIn</string>
+    <string name="canvas_action_zoom_out">ZoomOut</string>
+    <string name="canvas_reset_zoom">Reset Zoom</string>
+    <string name="canvas_option_menu">Menu</string>
 </resources>

@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import event.CanvasDrawStyleChangeEvent
 import models.CanvasDrawStyle
 import models.canvas.CanvasColorOptions
+import models.canvas.CornerRoundnessOption
 import models.canvas.PathEffectOptions
 import models.canvas.StrokeWidthOption
 import ui.DrawItAppTheme
@@ -28,6 +29,7 @@ fun CanvasDrawStylePicker(
     onStrokeWidthChange: (StrokeWidthOption) -> Unit,
     onPathEffectChange: (PathEffectOptions) -> Unit,
     onAlphaLevelChange: (Float) -> Unit,
+    onRoundnessChange: (CornerRoundnessOption) -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     elevation: Dp = 4.dp,
@@ -65,6 +67,12 @@ fun CanvasDrawStylePicker(
                 headingStyle = optionTextStyle,
                 headingColor = optionHeadingColor
             )
+            CornerRadiusPicker(
+                option = style.roundness,
+                onOptionChange = onRoundnessChange,
+                headingStyle = optionTextStyle,
+                headingColor = optionHeadingColor,
+            )
             StrokeWidthPicker(
                 canvasStrokeOption = style.strokeOption,
                 onStrokeWidthChange = onStrokeWidthChange,
@@ -99,6 +107,7 @@ fun CanvasDrawStylePicker(
         onStrokeColorChange = { onEvent(CanvasDrawStyleChangeEvent.OnStrokeColorChange(it)) },
         onBackgroundColorChange = { onEvent(CanvasDrawStyleChangeEvent.OnBackgroundColorChange(it)) },
         onAlphaLevelChange = { onEvent(CanvasDrawStyleChangeEvent.OnAlphaChange(it)) },
+        onRoundnessChange = { onEvent(CanvasDrawStyleChangeEvent.OnRoundnessChange(it)) },
         modifier = modifier,
         containerColor = containerColor,
         elevation = elevation,

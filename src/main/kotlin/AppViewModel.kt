@@ -90,6 +90,7 @@ class AppViewModel {
             is CanvasDrawStyleChangeEvent.OnPathEffectChange -> _drawStyle.update { state -> state.copy(pathEffect = event.pathEffectOptions) }
             is CanvasDrawStyleChangeEvent.OnStrokeColorChange -> _drawStyle.update { state -> state.copy(strokeColor = event.colorOptions) }
             is CanvasDrawStyleChangeEvent.OnStrokeOptionChange -> _drawStyle.update { state -> state.copy(strokeOption = event.option) }
+            is CanvasDrawStyleChangeEvent.OnRoundnessChange -> _drawStyle.update { state -> state.copy(roundness = event.roundness) }
         }
     }
 

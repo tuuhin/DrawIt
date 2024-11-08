@@ -12,6 +12,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.eva.draw_it.drawit.generated.resources.Res
+import com.eva.draw_it.drawit.generated.resources.style_option_opacity
+import org.jetbrains.compose.resources.stringResource
 import ui.DrawItAppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,7 +29,7 @@ fun OpacityPicker(
 ) {
     Column(modifier = modifier) {
         Text(
-            text = "Opacity",
+            text = stringResource(Res.string.style_option_opacity),
             color = headingColor,
             style = headingStyle
         )

@@ -1,12 +1,19 @@
 package mapper
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.eva.draw_it.drawit.generated.resources.Res
+import com.eva.draw_it.drawit.generated.resources.ic_edge_rounded
+import com.eva.draw_it.drawit.generated.resources.ic_edge_straight
 import models.canvas.CanvasColorOptions
+import models.canvas.CornerRoundnessOption
 import models.canvas.PathEffectOptions
 import models.canvas.StrokeWidthOption
+import org.jetbrains.compose.resources.painterResource
 
 val CanvasColorOptions.foregroundColor: Color
     get() = when (this) {
@@ -36,6 +43,13 @@ fun PathEffectOptions.toPathEffect(
         PathEffectOptions.DOTTED -> PathEffect.dashPathEffect(intervals = List(2) { dottedInterval }.toFloatArray())
     }
 }
+
+val CornerRoundnessOption.painterRes: Painter
+    @Composable
+    get() = when (this) {
+        CornerRoundnessOption.NO_ROUND -> painterResource(Res.drawable.ic_edge_straight)
+        CornerRoundnessOption.ROUNDED -> painterResource(Res.drawable.ic_edge_rounded)
+    }
 
 val StrokeWidthOption.width: Dp
     get() = when (this) {
