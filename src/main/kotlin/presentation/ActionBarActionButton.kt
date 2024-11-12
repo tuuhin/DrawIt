@@ -32,7 +32,6 @@ import mapper.keyboardShortcuts
 import mapper.overlayText
 import mapper.tooltipText
 import models.actions.ActionBarActions
-import models.actions.CanvasDrawAction
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -106,9 +105,9 @@ fun ActionBarActionButton(
                 tint = contentColor,
                 modifier = Modifier.padding(all = 8.dp).size(20.dp).align(Alignment.Center),
             )
-            if (action is CanvasDrawAction) {
+            action.overlayText?.let {
                 Text(
-                    text = action.overlayText,
+                    text = it,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Thin,
                     color = contentColor,

@@ -1,11 +1,9 @@
 package presentation.drawing
 
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -23,6 +21,8 @@ fun DrawScope.drawCanvasObjects(
     stroke: Stroke = Stroke(),
     alpha: Float = 1f,
     isRounded: Boolean = false,
+    hasBoundary: Boolean = false,
+    boundaryColor: Color = Color.Yellow,
 ) {
     val basePath = Path()
 
@@ -171,13 +171,62 @@ fun DrawScope.drawCanvasObjects(
 
         else -> {}
     }
+
+    when (action) {
+        CanvasDrawAction.ACTION_RECT, CanvasDrawAction.ACTION_DIAMOND, CanvasDrawAction.ACTION_ELLIPSE -> {
+            // outline
+            if (hasBoundary) {
+                with(boundingRect) {
+                    val boundaryBox = Size(3.dp.toPx(), 3.dp.toPx())
+                    val rotateOval = Size(6.dp.toPx(), 6.dp.toPx())
+                    // boundary
+                    val boundary = Path().apply {
+                        moveTo(topLeft + Offset(boundaryBox.width, 0f))
+                        lineTo(topRight - Offset(boundaryBox.width, 0f))
+
+                        moveTo(topRight + Offset(0f, boundaryBox.height))
+                        lineTo(bottomRight - Offset(0f, boundaryBox.height))
+
+                        moveTo(bottomRight - Offset(boundaryBox.width, 0f))
+                        lineTo(bottomLeft + Offset(boundaryBox.width, 0f))
+
+                        moveTo(bottomLeft - Offset(0f, boundaryBox.height))
+                        lineTo(topLeft + Offset(0f, boundaryBox.height))
+                    }
+                    val outlinePath = Path().apply {
+                        addRect(topLeft.calculateRectFromCenter(boundaryBox))
+                        addRect(topRight.calculateRectFromCenter(boundaryBox))
+                        addRect(bottomLeft.calculateRectFromCenter(boundaryBox))
+                        addRect(bottomRight.calculateRectFromCenter(boundaryBox))
+                        addPath(boundary)
+
+                        // draw rotate
+
+                        addOval(oval = Rect(topCenter - Offset(0f, 20.dp.toPx()), rotateOval))
+                    }
+                    drawPath(
+                        path = outlinePath,
+                        color = boundaryColor,
+                        style = Stroke(width = 1.dp.toPx(), join = StrokeJoin.Miter)
+                    )
+                }
+            }
+        }
+
+        else -> {}
+    }
 }
 
-private fun Path.moveTo(offset: Offset) = moveTo(offset.x, offset.y)
-private fun Path.lineTo(offset: Offset) = lineTo(offset.x, offset.y)
+internal fun Path.moveTo(offset: Offset) = moveTo(offset.x, offset.y)
+internal fun Path.lineTo(offset: Offset) = lineTo(offset.x, offset.y)
 
 private fun Offset.distanceBetween(other: Offset): Float =
     sqrt((this.x - other.x).pow(2) + (this.y - other.y).pow(2))
 
 private fun Offset.divideSegment(other: Offset, ratio: Float): Offset =
     Offset((1 - ratio) * other.x + ratio * this.x, (1 - ratio) * other.y + ratio * this.y)
+
+private fun Offset.calculateRectFromCenter(size: Size): Rect {
+    val half = Offset(size.width, size.height)
+    return Rect(topLeft = this - half, bottomRight = this + half)
+}

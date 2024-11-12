@@ -1,11 +1,23 @@
 package models
 
+import models.actions.ActionBarActions
 import models.actions.CanvasDrawAction
+import models.actions.CanvasUtilAction
 
 data class ActionBarState(
-    val isActionLocked: Boolean = false,
-    val selectedDrawAction: CanvasDrawAction? = null,
+    val action: ActionBarActions? = null,
+    val isCanvasLocked: Boolean = false,
 ) {
     val hasAction: Boolean
-        get() = selectedDrawAction != null
+        get() = action != null
+
+    val selectedDrawAction: CanvasDrawAction?
+        get() = action as? CanvasDrawAction
+
+    val isSelectAction: Boolean
+        get() = action == CanvasUtilAction.ACTION_SELECT
+
+    val isActionDraw: Boolean
+        get() = action is CanvasDrawAction
+
 }

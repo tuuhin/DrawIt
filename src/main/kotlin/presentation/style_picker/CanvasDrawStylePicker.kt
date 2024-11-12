@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import event.CanvasDrawStyleChangeEvent
+import event.CanvasDrawStyleEvent
 import models.CanvasDrawStyle
 import models.canvas.CanvasColorOptions
 import models.canvas.CornerRoundnessOption
@@ -92,7 +92,7 @@ fun CanvasDrawStylePicker(
 @Composable
 fun CanvasDrawStylePicker(
     style: CanvasDrawStyle,
-    onEvent: (CanvasDrawStyleChangeEvent) -> Unit,
+    onEvent: (CanvasDrawStyleEvent) -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     elevation: Dp = 2.dp,
@@ -102,12 +102,12 @@ fun CanvasDrawStylePicker(
 ) {
     CanvasDrawStylePicker(
         style = style,
-        onStrokeWidthChange = { onEvent(CanvasDrawStyleChangeEvent.OnStrokeOptionChange(it)) },
-        onPathEffectChange = { onEvent(CanvasDrawStyleChangeEvent.OnPathEffectChange(it)) },
-        onStrokeColorChange = { onEvent(CanvasDrawStyleChangeEvent.OnStrokeColorChange(it)) },
-        onBackgroundColorChange = { onEvent(CanvasDrawStyleChangeEvent.OnBackgroundColorChange(it)) },
-        onAlphaLevelChange = { onEvent(CanvasDrawStyleChangeEvent.OnAlphaChange(it)) },
-        onRoundnessChange = { onEvent(CanvasDrawStyleChangeEvent.OnRoundnessChange(it)) },
+        onStrokeWidthChange = { onEvent(CanvasDrawStyleEvent.OnStrokeOptionChange(it)) },
+        onPathEffectChange = { onEvent(CanvasDrawStyleEvent.OnPathEffectChange(it)) },
+        onStrokeColorChange = { onEvent(CanvasDrawStyleEvent.OnStrokeColorChange(it)) },
+        onBackgroundColorChange = { onEvent(CanvasDrawStyleEvent.OnBackgroundColorChange(it)) },
+        onAlphaLevelChange = { onEvent(CanvasDrawStyleEvent.OnAlphaChange(it)) },
+        onRoundnessChange = { onEvent(CanvasDrawStyleEvent.OnRoundnessChange(it)) },
         modifier = modifier,
         containerColor = containerColor,
         elevation = elevation,

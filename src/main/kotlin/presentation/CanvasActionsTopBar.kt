@@ -37,23 +37,35 @@ fun CanvasActionsTopBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // lock action has its own speciality to keep differently
-            CanvasUtilAction.entries.forEach { action ->
-                ActionBarActionButton(
-                    isSelected = state.isActionLocked,
-                    action = action,
-                    onClickOrShortcut = { onActionChange(action) }
-                )
-                if (action == CanvasUtilAction.ACTION_LOCK_CANVAS)
-                    VerticalDivider(thickness = 2.dp)
-            }
+            ActionBarActionButton(
+                isSelected = state.isCanvasLocked,
+                action = CanvasUtilAction.ACTION_LOCK_CANVAS,
+                onClickOrShortcut = { onActionChange(CanvasUtilAction.ACTION_LOCK_CANVAS) }
+            )
+            VerticalDivider(thickness = 2.dp)
+            ActionBarActionButton(
+                isSelected = state.action == CanvasUtilAction.ACTION_HAND,
+                action = CanvasUtilAction.ACTION_HAND,
+                onClickOrShortcut = { onActionChange(CanvasUtilAction.ACTION_HAND) },
+            )
+            ActionBarActionButton(
+                isSelected = state.action == CanvasUtilAction.ACTION_SELECT,
+                action = CanvasUtilAction.ACTION_SELECT,
+                onClickOrShortcut = { onActionChange(CanvasUtilAction.ACTION_SELECT) },
+            )
             // other actions
             CanvasDrawAction.entries.sortedBy { it.seqNo }.forEach { action ->
                 ActionBarActionButton(
-                    isSelected = state.selectedDrawAction == action,
+                    isSelected = state.action == action,
                     action = action,
                     onClickOrShortcut = { onActionChange(action) }
                 )
             }
+            ActionBarActionButton(
+                isSelected = state.action == CanvasUtilAction.ACTION_ERASE,
+                action = CanvasUtilAction.ACTION_ERASE,
+                onClickOrShortcut = { onActionChange(CanvasUtilAction.ACTION_ERASE) },
+            )
         }
     }
 }
@@ -61,8 +73,8 @@ fun CanvasActionsTopBar(
 @Preview
 @Composable
 fun ActionBarPreview() = DrawItAppTheme {
-        CanvasActionsTopBar(
-            state = ActionBarState(),
-            onActionChange = {}
-        )
+    CanvasActionsTopBar(
+        state = ActionBarState(),
+        onActionChange = {}
+    )
 }

@@ -7,9 +7,11 @@ import androidx.compose.foundation.gestures.onDrag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -17,72 +19,61 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import event.CanvasItemEvent
 import event.CanvasPropertiesEvent
 import mapper.backgroundColor
 import mapper.foregroundColor
 import mapper.toPathEffect
 import mapper.width
 import models.*
-import models.canvas.CornerRoundnessOption
 import ui.DrawItAppTheme
 import kotlin.math.abs
 import kotlin.math.sign
 
-@OptIn(
-    ExperimentalFoundationApi::class,
-    ExperimentalComposeUiApi::class
-)
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DrawingCanvas(
+private fun DrawingCanvas(
     state: ActionBarState,
     style: CanvasDrawStyle,
-    propertiesState: CanvasPropertiesState,
+    properties: CanvasPropertiesState,
     drawnObjects: CanvasDrawnObjects,
-    onCreateNewObject: (CanvasItemModel) -> Unit,
-    onCanvasPropertiesEvent: (CanvasPropertiesEvent) -> Unit,
+    onAddItem: (CanvasItemModel) -> Unit,
+    onSelectItem: (CanvasItemModel) -> Unit,
+    onZoomCanvas: (Float) -> Unit,
+    onPanCanvas: (Offset) -> Unit,
     modifier: Modifier = Modifier,
+    onDeSelectItem: () -> Unit = {},
 ) {
     var startOffset by remember(state) { mutableStateOf(Offset.Zero) }
     var endOffset by remember(state) { mutableStateOf(Offset.Zero) }
     val styleState by rememberUpdatedState(style)
 
-    val pointerIcon = remember(state.selectedDrawAction) {
-        state.selectedDrawAction?.let { PointerIcon.Crosshair }
+    val pointerIcon = remember(state.action, drawnObjects.selectedObject) {
+        state.action?.let { PointerIcon.Crosshair }
             ?: PointerIcon.Default
     }
 
+    val outlineColor = MaterialTheme.colorScheme.tertiary
+
     Box(
         modifier = modifier
-            .pointerHoverIcon(pointerIcon)
-            .onKeyEvent { event ->
-                val keyCtrlPlusComma =
-                    (event.isCtrlPressed && event.key == Key.Comma && event.type == KeyEventType.KeyDown)
-                if (keyCtrlPlusComma) {
-                    onCanvasPropertiesEvent(CanvasPropertiesEvent.ToggleGridLinesVisibility)
-                }
-                keyCtrlPlusComma
-            }
-            .onPointerEvent(eventType = PointerEventType.Scroll) { event ->
-                val change = event.changes.firstOrNull() ?: return@onPointerEvent
-                val scrollDelta = change.scrollDelta * -1f
-                // FIXME: Fix the problems regrading proper scroll
-
-                // zoom events are made when scroll delta y component is 1 or -1
-                if (abs(scrollDelta.y) == 1f) {
-                    val zoomSign = scrollDelta.y.sign
-                    onCanvasPropertiesEvent(CanvasPropertiesEvent.OnZoom(zoomSign))
-                }
-                onCanvasPropertiesEvent(CanvasPropertiesEvent.OnPanCanvas(scrollDelta.times(10.dp.toPx())))
-            }
+            .pointerHoverIcon(icon = pointerIcon)
+            .doubleScrollOrZoom(onPan = onPanCanvas, onZoom = onZoomCanvas)
+            .observeMouseMovements(
+                enabled = state.isSelectAction,
+                items = drawnObjects,
+                onSelectObject = onSelectItem,
+                onDeselectObject = onDeSelectItem
+            )
     ) {
         Spacer(
             modifier = Modifier.matchParentSize()
                 .onDrag(
-                    enabled = state.hasAction,
+                    enabled = state.isActionDraw,
                     matcher = PointerMatcher.mouse(PointerButton.Primary),
                     onDragStart = { start ->
                         startOffset = start
@@ -92,14 +83,14 @@ fun DrawingCanvas(
                         // create and action
                         state.selectedDrawAction?.let { action ->
                             val item = CanvasItemModel(
-                                start = startOffset - propertiesState.pannedScaledOffset,
-                                end = endOffset - propertiesState.pannedScaledOffset,
+                                start = startOffset - properties.pannedScaledOffset,
+                                end = endOffset - properties.pannedScaledOffset,
                                 action = action,
                                 style = styleState,
-                                scale = propertiesState.scale
+                                scale = properties.scale
                             )
                             // create a new object
-                            onCreateNewObject(item)
+                            onAddItem(item)
                             // reset previous
                             endOffset = Offset.Zero
                             startOffset = Offset.Zero
@@ -111,13 +102,13 @@ fun DrawingCanvas(
                     },
                     onDrag = { amount -> endOffset += amount },
                 )
-                .drawGraphLines(showGraph = propertiesState.showGraphLines)
+                .drawGraphLines(showGraph = properties.showGraphLines)
                 .drawBehind {
                     // this will draw the stuff
                     withTransform(
                         transformBlock = {
-                            scale(propertiesState.scale)
-                            translate(left = propertiesState.panedCanvas.x, top = propertiesState.panedCanvas.y)
+                            scale(scale = properties.scale)
+                            translate(left = properties.panedCanvas.x, top = properties.panedCanvas.y)
                         },
                         drawBlock = {
                             drawnObjects.objects.fastForEach { drawObject ->
@@ -136,11 +127,13 @@ fun DrawingCanvas(
                                         strokeColor = drawObject.strokeColor.foregroundColor,
                                         fillColor = drawObject.background.backgroundColor,
                                         alpha = drawObject.alpha,
-                                        isRounded = drawObject.isRounded
+                                        isRounded = drawObject.isRounded,
+                                        hasBoundary = state.isSelectAction && drawnObjects.selectedObject == drawObject,
+                                        boundaryColor = outlineColor
                                     )
                                 }
                             }
-                        }
+                        },
                     )
                 }.drawBehind {
                     state.selectedDrawAction?.let { drawAction ->
@@ -158,13 +151,78 @@ fun DrawingCanvas(
                             strokeColor = style.strokeColor.foregroundColor,
                             fillColor = style.background.backgroundColor,
                             alpha = style.alpha,
-                            isRounded = style.roundness == CornerRoundnessOption.ROUNDED
+                            isRounded = style.isRounded,
                         )
                     }
                 },
         )
     }
 }
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun Modifier.observeMouseMovements(
+    items: CanvasDrawnObjects,
+    onSelectObject: (CanvasItemModel) -> Unit,
+    onDeselectObject: () -> Unit = {},
+    enabled: Boolean = true,
+) = composed {
+    if (!enabled) return@composed Modifier
+
+    onPointerEvent(eventType = PointerEventType.Press) { event ->
+        val change = event.changes.firstOrNull() ?: return@onPointerEvent
+        // matching object
+        items.objects.find { it.boundingRect.contains(change.position) }?.let { item ->
+            if (items.selectedObject == item) onDeselectObject()
+            else onSelectObject(item)
+        } ?: onDeselectObject()
+    }
+}
+
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun Modifier.doubleScrollOrZoom(
+    onPan: (Offset) -> Unit,
+    onZoom: (Float) -> Unit,
+    speed: Float = 10f,
+) = then(
+    Modifier.onPointerEvent(eventType = PointerEventType.Scroll) { event ->
+        val change = event.changes.firstOrNull() ?: return@onPointerEvent
+        val scrollDelta = change.scrollDelta * -1f
+        // FIXME: Fix the problems regrading proper scroll
+
+        // zoom events are made when scroll delta y component is 1 or -1
+        if (abs(scrollDelta.y) == 1f) {
+            val zoomSign = scrollDelta.y.sign
+            onZoom(zoomSign)
+        }
+        onPan(scrollDelta.times(speed))
+    }
+)
+
+@Composable
+fun DrawingCanvas(
+    state: ActionBarState,
+    style: CanvasDrawStyle,
+    propertiesState: CanvasPropertiesState,
+    drawnObjects: CanvasDrawnObjects,
+    onCanvasPropertiesEvent: (CanvasPropertiesEvent) -> Unit,
+    onInteractionEvent: (CanvasItemEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    DrawingCanvas(
+        state = state,
+        style = style,
+        properties = propertiesState,
+        drawnObjects = drawnObjects,
+        onAddItem = { onInteractionEvent(CanvasItemEvent.OnAddNewCanvasItem(it)) },
+        onSelectItem = { onInteractionEvent(CanvasItemEvent.OnSelectCanvasItem(it)) },
+        onDeSelectItem = { onInteractionEvent(CanvasItemEvent.OnDeSelectCanvasItem) },
+        onZoomCanvas = { onCanvasPropertiesEvent(CanvasPropertiesEvent.OnZoom(it)) },
+        onPanCanvas = { onCanvasPropertiesEvent(CanvasPropertiesEvent.OnPanCanvas(it)) },
+        modifier = modifier,
+    )
+}
+
 
 @Preview
 @Composable
@@ -174,7 +232,7 @@ fun DrawingCanvasPreview() = DrawItAppTheme {
         style = CanvasDrawStyle(),
         propertiesState = CanvasPropertiesState(),
         drawnObjects = CanvasDrawnObjects(),
-        onCreateNewObject = {},
+        onInteractionEvent = {},
         onCanvasPropertiesEvent = {},
         modifier = Modifier.fillMaxSize()
     )

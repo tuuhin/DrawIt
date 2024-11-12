@@ -1,5 +1,6 @@
 import androidx.compose.ui.geometry.Offset
-import event.CanvasDrawStyleChangeEvent
+import event.CanvasDrawStyleEvent
+import event.CanvasItemEvent
 import event.CanvasPropertiesEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -7,9 +8,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.swing.Swing
-import models.*
+import models.ActionBarState
+import models.CanvasDrawStyle
+import models.CanvasDrawnObjects
+import models.CanvasPropertiesState
 import models.actions.ActionBarActions
-import models.actions.CanvasDrawAction
 import models.actions.CanvasUtilAction
 import kotlin.math.exp
 
@@ -66,31 +69,63 @@ class AppViewModel {
 
         if (action == CanvasUtilAction.ACTION_LOCK_CANVAS) {
             _actionBarState.update { state ->
-                val toggleLock = !state.isActionLocked
-                state.copy(isActionLocked = toggleLock)
+                val toggleLock = !state.isCanvasLocked
+                state.copy(isCanvasLocked = toggleLock)
             }
-        } else if (action is CanvasDrawAction) {
+        } else {
             _actionBarState.update { state ->
-                val newState = if (state.selectedDrawAction != action) action else null
-                state.copy(selectedDrawAction = newState)
+                val newState = if (state.action != action) action else null
+                state.copy(action = newState)
             }
         }
     }
 
-    fun onAddNewObject(newObject: CanvasItemModel) {
-        _canvasObjects.update { objectModel ->
-            objectModel.copy(objects = objectModel.objects + newObject, selectedObject = newObject)
+    fun onCanvasItemEvent(event: CanvasItemEvent) {
+        when (event) {
+            CanvasItemEvent.OnDeSelectCanvasItem -> _canvasObjects.update { objectModel ->
+                objectModel.copy(selectedObject = null)
+            }
+
+            is CanvasItemEvent.OnSelectCanvasItem -> _canvasObjects.update { objectModel ->
+                objectModel.copy(selectedObject = event.item)
+            }
+
+            is CanvasItemEvent.OnAddNewCanvasItem -> {
+                val newSelection = if (_actionBarState.value.isCanvasLocked) null else event.item
+                _canvasObjects.update { canvasObject ->
+                    canvasObject.copy(
+                        objects = canvasObject.objects + event.item,
+                        selectedObject = newSelection
+                    )
+                }
+                // update it to select mode
+                newSelection?.let {
+                    _actionBarState.update { state -> state.copy(action = CanvasUtilAction.ACTION_SELECT) }
+                }
+            }
         }
     }
 
-    fun onDrawStyleChange(event: CanvasDrawStyleChangeEvent) {
+
+    fun onDrawStyleChange(event: CanvasDrawStyleEvent) {
         when (event) {
-            is CanvasDrawStyleChangeEvent.OnAlphaChange -> _drawStyle.update { state -> state.copy(alpha = event.alpha) }
-            is CanvasDrawStyleChangeEvent.OnBackgroundColorChange -> _drawStyle.update { state -> state.copy(background = event.colorOptions) }
-            is CanvasDrawStyleChangeEvent.OnPathEffectChange -> _drawStyle.update { state -> state.copy(pathEffect = event.pathEffectOptions) }
-            is CanvasDrawStyleChangeEvent.OnStrokeColorChange -> _drawStyle.update { state -> state.copy(strokeColor = event.colorOptions) }
-            is CanvasDrawStyleChangeEvent.OnStrokeOptionChange -> _drawStyle.update { state -> state.copy(strokeOption = event.option) }
-            is CanvasDrawStyleChangeEvent.OnRoundnessChange -> _drawStyle.update { state -> state.copy(roundness = event.roundness) }
+            is CanvasDrawStyleEvent.OnAlphaChange -> _drawStyle.update { state -> state.copy(alpha = event.alpha) }
+            is CanvasDrawStyleEvent.OnBackgroundColorChange -> _drawStyle.update { state -> state.copy(background = event.colorOptions) }
+            is CanvasDrawStyleEvent.OnPathEffectChange -> _drawStyle.update { state -> state.copy(pathEffect = event.pathEffectOptions) }
+            is CanvasDrawStyleEvent.OnStrokeColorChange -> _drawStyle.update { state -> state.copy(strokeColor = event.colorOptions) }
+            is CanvasDrawStyleEvent.OnStrokeOptionChange -> _drawStyle.update { state -> state.copy(strokeOption = event.option) }
+            is CanvasDrawStyleEvent.OnRoundnessChange -> _drawStyle.update { state -> state.copy(roundness = event.roundness) }
+        }
+        // update the selected object
+        val canvasObjects = _canvasObjects.value
+        // update if there is a selected object
+        canvasObjects.selectedObject?.let { selectedObject ->
+            val updatedObject = selectedObject.copy(style = _drawStyle.value)
+            val result = canvasObjects.objects.map { item ->
+                if (item.uuid == selectedObject.uuid) updatedObject
+                else item
+            }
+            _canvasObjects.update { it.copy(objects = result) }
         }
     }
 

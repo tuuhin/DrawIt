@@ -12,4 +12,7 @@ data class CanvasDrawStyle(
     val strokeOption: StrokeWidthOption = StrokeWidthOption.THIN,
     val roundness: CornerRoundnessOption = CornerRoundnessOption.NO_ROUND,
     val alpha: Float = 1f,
-)
+) {
+    val isRounded: Boolean
+        get() = roundness == CornerRoundnessOption.ROUNDED
+}
