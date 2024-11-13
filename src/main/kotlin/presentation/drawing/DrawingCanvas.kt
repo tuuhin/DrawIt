@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -19,7 +17,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import event.CanvasItemEvent
@@ -30,8 +30,6 @@ import mapper.toPathEffect
 import mapper.width
 import models.*
 import ui.DrawItAppTheme
-import kotlin.math.abs
-import kotlin.math.sign
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -43,6 +41,7 @@ private fun DrawingCanvas(
     drawnObjects: CanvasDrawnObjects,
     onAddItem: (CanvasItemModel) -> Unit,
     onSelectItem: (CanvasItemModel) -> Unit,
+    onPanSelectedItem: (item: CanvasItemModel, pan: Offset) -> Unit,
     onZoomCanvas: (Float) -> Unit,
     onPanCanvas: (Offset) -> Unit,
     modifier: Modifier = Modifier,
@@ -67,6 +66,7 @@ private fun DrawingCanvas(
                 enabled = state.isSelectAction,
                 items = drawnObjects,
                 onSelectObject = onSelectItem,
+                onPanCanvasItem = onPanSelectedItem,
                 onDeselectObject = onDeSelectItem
             )
     ) {
@@ -128,7 +128,7 @@ private fun DrawingCanvas(
                                         fillColor = drawObject.background.backgroundColor,
                                         alpha = drawObject.alpha,
                                         isRounded = drawObject.isRounded,
-                                        hasBoundary = state.isSelectAction && drawnObjects.selectedObject == drawObject,
+                                        hasBoundary = state.isSelectAction && drawObject isSameAs drawnObjects.selectedObject,
                                         boundaryColor = outlineColor
                                     )
                                 }
@@ -159,46 +159,6 @@ private fun DrawingCanvas(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
-private fun Modifier.observeMouseMovements(
-    items: CanvasDrawnObjects,
-    onSelectObject: (CanvasItemModel) -> Unit,
-    onDeselectObject: () -> Unit = {},
-    enabled: Boolean = true,
-) = composed {
-    if (!enabled) return@composed Modifier
-
-    onPointerEvent(eventType = PointerEventType.Press) { event ->
-        val change = event.changes.firstOrNull() ?: return@onPointerEvent
-        // matching object
-        items.objects.find { it.boundingRect.contains(change.position) }?.let { item ->
-            if (items.selectedObject == item) onDeselectObject()
-            else onSelectObject(item)
-        } ?: onDeselectObject()
-    }
-}
-
-
-@OptIn(ExperimentalComposeUiApi::class)
-private fun Modifier.doubleScrollOrZoom(
-    onPan: (Offset) -> Unit,
-    onZoom: (Float) -> Unit,
-    speed: Float = 10f,
-) = then(
-    Modifier.onPointerEvent(eventType = PointerEventType.Scroll) { event ->
-        val change = event.changes.firstOrNull() ?: return@onPointerEvent
-        val scrollDelta = change.scrollDelta * -1f
-        // FIXME: Fix the problems regrading proper scroll
-
-        // zoom events are made when scroll delta y component is 1 or -1
-        if (abs(scrollDelta.y) == 1f) {
-            val zoomSign = scrollDelta.y.sign
-            onZoom(zoomSign)
-        }
-        onPan(scrollDelta.times(speed))
-    }
-)
-
 @Composable
 fun DrawingCanvas(
     state: ActionBarState,
@@ -219,6 +179,7 @@ fun DrawingCanvas(
         onDeSelectItem = { onInteractionEvent(CanvasItemEvent.OnDeSelectCanvasItem) },
         onZoomCanvas = { onCanvasPropertiesEvent(CanvasPropertiesEvent.OnZoom(it)) },
         onPanCanvas = { onCanvasPropertiesEvent(CanvasPropertiesEvent.OnPanCanvas(it)) },
+        onPanSelectedItem = { item, pan -> onInteractionEvent(CanvasItemEvent.OnMoveSelectedItem(item, pan)) },
         modifier = modifier,
     )
 }

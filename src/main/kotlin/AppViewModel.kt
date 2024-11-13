@@ -103,6 +103,18 @@ class AppViewModel {
                     _actionBarState.update { state -> state.copy(action = CanvasUtilAction.ACTION_SELECT) }
                 }
             }
+
+            is CanvasItemEvent.OnMoveSelectedItem -> {
+                val items = _canvasObjects.value.objects.map { item ->
+                    if (event.item isSameAs item) with(item) {
+                        copy(
+                            start = start + event.panOffset,
+                            end = end + event.panOffset
+                        )
+                    } else item
+                }
+                _canvasObjects.update { itemsObject -> itemsObject.copy(objects = items) }
+            }
         }
     }
 

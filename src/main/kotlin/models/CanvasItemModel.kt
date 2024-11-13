@@ -37,4 +37,6 @@ data class CanvasItemModel(
 
     val boundingRect: Rect
         get() = Rect(start, end)
+
+    infix fun isSameAs(other: CanvasItemModel?) = other?.uuid == uuid
 }

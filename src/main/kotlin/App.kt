@@ -19,7 +19,8 @@ import presentation.menu_options.ZoomAndUndoRedoOption
 import presentation.style_picker.CanvasDrawStylePicker
 
 @Composable
-fun App() {
+fun App(modifier: Modifier = Modifier) {
+
     val viewModel = remember { AppViewModel() }
 
     DisposableEffect(viewModel) {
@@ -39,6 +40,7 @@ fun App() {
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackBarState) },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier
     ) {
         // this will be the canvas
         DrawingCanvas(
@@ -46,7 +48,7 @@ fun App() {
             propertiesState = canvasProperties,
             drawnObjects = canvasDrawObjects,
             style = drawStyle,
-            onCreateNewObject = viewModel::onAddNewObject,
+            onInteractionEvent = viewModel::onCanvasItemEvent,
             onCanvasPropertiesEvent = viewModel::onCanvasPropertiesEvent,
             modifier = Modifier.fillMaxSize()
         )
@@ -64,7 +66,7 @@ fun App() {
             )
             // draw style picker
             AnimatedVisibility(
-                visible = actionBarState.selectedDrawAction != null,
+                visible = actionBarState.isActionDraw,
                 modifier = Modifier.align(Alignment.CenterStart),
                 enter = slideInHorizontally { width -> -width } + scaleIn(
                     transformOrigin = TransformOrigin(pivotFractionX = 0f, pivotFractionY = .5f)
