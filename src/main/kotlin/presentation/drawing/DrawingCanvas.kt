@@ -30,6 +30,7 @@ import mapper.toPathEffect
 import mapper.width
 import models.*
 import ui.DrawItAppTheme
+import java.util.*
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -41,7 +42,8 @@ private fun DrawingCanvas(
     drawnObjects: CanvasDrawnObjects,
     onAddItem: (CanvasItemModel) -> Unit,
     onSelectItem: (CanvasItemModel) -> Unit,
-    onPanSelectedItem: (item: CanvasItemModel, pan: Offset) -> Unit,
+    onPanSelectedItem: (item: UUID, pan: Offset) -> Unit,
+    onResizeSelectedItem: (item: UUID, rect: Rect) -> Unit,
     onZoomCanvas: (Float) -> Unit,
     onPanCanvas: (Offset) -> Unit,
     modifier: Modifier = Modifier,
@@ -51,7 +53,7 @@ private fun DrawingCanvas(
     var endOffset by remember(state) { mutableStateOf(Offset.Zero) }
     val styleState by rememberUpdatedState(style)
 
-    val pointerIcon = remember(state.action, drawnObjects.selectedObject) {
+    val pointerIcon = remember(state.action) {
         state.action?.let { PointerIcon.Crosshair }
             ?: PointerIcon.Default
     }
@@ -62,12 +64,13 @@ private fun DrawingCanvas(
         modifier = modifier
             .pointerHoverIcon(icon = pointerIcon)
             .doubleScrollOrZoom(onPan = onPanCanvas, onZoom = onZoomCanvas)
-            .observeMouseMovements(
+            .observeItemInteractions(
                 enabled = state.isSelectAction,
                 items = drawnObjects,
                 onSelectObject = onSelectItem,
                 onPanCanvasItem = onPanSelectedItem,
-                onDeselectObject = onDeSelectItem
+                onDeselectObject = onDeSelectItem,
+                onResizeCanvasItem = onResizeSelectedItem
             )
     ) {
         Spacer(
@@ -111,7 +114,7 @@ private fun DrawingCanvas(
                             translate(left = properties.panedCanvas.x, top = properties.panedCanvas.y)
                         },
                         drawBlock = {
-                            drawnObjects.objects.fastForEach { drawObject ->
+                            drawnObjects.canvasItems.fastForEach { drawObject ->
                                 scale(1f / drawObject.scale) {
                                     drawCanvasObjects(
                                         boundingRect = drawObject.boundingRect,
@@ -128,7 +131,7 @@ private fun DrawingCanvas(
                                         fillColor = drawObject.background.backgroundColor,
                                         alpha = drawObject.alpha,
                                         isRounded = drawObject.isRounded,
-                                        hasBoundary = state.isSelectAction && drawObject isSameAs drawnObjects.selectedObject,
+                                        hasBoundary = state.isSelectAction && drawObject.uuid == drawnObjects.selectedUUID,
                                         boundaryColor = outlineColor
                                     )
                                 }
@@ -180,6 +183,7 @@ fun DrawingCanvas(
         onZoomCanvas = { onCanvasPropertiesEvent(CanvasPropertiesEvent.OnZoom(it)) },
         onPanCanvas = { onCanvasPropertiesEvent(CanvasPropertiesEvent.OnPanCanvas(it)) },
         onPanSelectedItem = { item, pan -> onInteractionEvent(CanvasItemEvent.OnMoveSelectedItem(item, pan)) },
+        onResizeSelectedItem = { item, rect -> onInteractionEvent(CanvasItemEvent.OnResizeSelectedItem(item, rect)) },
         modifier = modifier,
     )
 }

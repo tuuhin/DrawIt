@@ -66,7 +66,7 @@ fun App(modifier: Modifier = Modifier) {
             )
             // draw style picker
             AnimatedVisibility(
-                visible = actionBarState.isActionDraw,
+                visible = actionBarState.hasAction,
                 modifier = Modifier.align(Alignment.CenterStart),
                 enter = slideInHorizontally { width -> -width } + scaleIn(
                     transformOrigin = TransformOrigin(pivotFractionX = 0f, pivotFractionY = .5f)

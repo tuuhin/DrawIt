@@ -41,8 +41,8 @@ class AppViewModel {
 
     val canvasProperties: StateFlow<CanvasPropertiesState>
         get() {
-            val canvasObjectCount = _canvasObjects.map { it.objects.isNotEmpty() }.distinctUntilChanged()
-            val redoObjectCount = _redoObjects.map { it.objects.isNotEmpty() }.distinctUntilChanged()
+            val canvasObjectCount = _canvasObjects.map { it.canvasItems.isNotEmpty() }.distinctUntilChanged()
+            val redoObjectCount = _redoObjects.map { it.canvasItems.isNotEmpty() }.distinctUntilChanged()
 
             return combine(
                 canvasObjectCount,
@@ -83,19 +83,21 @@ class AppViewModel {
     fun onCanvasItemEvent(event: CanvasItemEvent) {
         when (event) {
             CanvasItemEvent.OnDeSelectCanvasItem -> _canvasObjects.update { objectModel ->
-                objectModel.copy(selectedObject = null)
+                objectModel.copy(selectedUUID = null)
             }
 
-            is CanvasItemEvent.OnSelectCanvasItem -> _canvasObjects.update { objectModel ->
-                objectModel.copy(selectedObject = event.item)
+            is CanvasItemEvent.OnSelectCanvasItem -> {
+                val allItems = _canvasObjects.value.canvasItems
+                if (event.item !in allItems) return
+                _canvasObjects.update { objectModel -> objectModel.copy(selectedUUID = event.item.uuid) }
             }
 
             is CanvasItemEvent.OnAddNewCanvasItem -> {
                 val newSelection = if (_actionBarState.value.isCanvasLocked) null else event.item
                 _canvasObjects.update { canvasObject ->
                     canvasObject.copy(
-                        objects = canvasObject.objects + event.item,
-                        selectedObject = newSelection
+                        canvasItems = canvasObject.canvasItems + event.item,
+                        selectedUUID = event.item.uuid
                     )
                 }
                 // update it to select mode
@@ -105,15 +107,24 @@ class AppViewModel {
             }
 
             is CanvasItemEvent.OnMoveSelectedItem -> {
-                val items = _canvasObjects.value.objects.map { item ->
-                    if (event.item isSameAs item) with(item) {
+                val items = _canvasObjects.value.canvasItems.map { item ->
+                    if (event.itemUUID == item.uuid) with(item) {
                         copy(
                             start = start + event.panOffset,
                             end = end + event.panOffset
                         )
                     } else item
                 }
-                _canvasObjects.update { itemsObject -> itemsObject.copy(objects = items) }
+                _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = items) }
+            }
+
+            is CanvasItemEvent.OnResizeSelectedItem -> {
+                val items = _canvasObjects.value.canvasItems.map { item ->
+                    if (event.itemUUID == item.uuid)
+                        with(event.newRect) { item.copy(start = topLeft, end = bottomRight) }
+                    else item
+                }
+                _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = items) }
             }
         }
     }
@@ -131,41 +142,40 @@ class AppViewModel {
         // update the selected object
         val canvasObjects = _canvasObjects.value
         // update if there is a selected object
-        canvasObjects.selectedObject?.let { selectedObject ->
-            val updatedObject = selectedObject.copy(style = _drawStyle.value)
-            val result = canvasObjects.objects.map { item ->
-                if (item.uuid == selectedObject.uuid) updatedObject
+        canvasObjects.selectedUUID?.let { selectedObject ->
+            val result = canvasObjects.canvasItems.map { item ->
+                if (item.uuid == selectedObject) item.copy(style = _drawStyle.value)
                 else item
             }
-            _canvasObjects.update { it.copy(objects = result) }
+            _canvasObjects.update { it.copy(canvasItems = result) }
         }
     }
 
     fun onCanvasPropertiesEvent(event: CanvasPropertiesEvent) {
         when (event) {
             CanvasPropertiesEvent.OnRedo -> {
-                val lastObject = _redoObjects.value.objects.lastOrNull()
+                val lastObject = _redoObjects.value.canvasItems.lastOrNull()
                 _redoObjects.update { canvas ->
                     val newList = if (lastObject == null) emptyList()
-                    else canvas.objects.dropLast(1)
-                    canvas.copy(objects = newList)
+                    else canvas.canvasItems.dropLast(1)
+                    canvas.copy(canvasItems = newList)
                 }
                 if (lastObject == null) return
                 _canvasObjects.update { canvas ->
-                    canvas.copy(objects = canvas.objects + lastObject)
+                    canvas.copy(canvasItems = canvas.canvasItems + lastObject)
                 }
             }
 
             CanvasPropertiesEvent.OnUndo -> {
-                val lastObject = _canvasObjects.value.objects.lastOrNull()
+                val lastObject = _canvasObjects.value.canvasItems.lastOrNull()
                 _canvasObjects.update { canvas ->
                     val newList = if (lastObject == null) emptyList()
-                    else canvas.objects.dropLast(1)
-                    canvas.copy(objects = newList)
+                    else canvas.canvasItems.dropLast(1)
+                    canvas.copy(canvasItems = newList)
                 }
                 if (lastObject == null) return
                 _redoObjects.update { canvas ->
-                    canvas.copy(objects = canvas.objects + lastObject)
+                    canvas.copy(canvasItems = canvas.canvasItems + lastObject)
                 }
             }
 
