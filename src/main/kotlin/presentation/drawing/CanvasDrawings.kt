@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
+import models.CanvasPropertiesState
 import models.actions.CanvasDrawAction
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -16,6 +17,7 @@ import kotlin.math.sqrt
 fun DrawScope.drawCanvasObjects(
     boundingRect: Rect,
     action: CanvasDrawAction,
+    properties: CanvasPropertiesState,
     strokeColor: Color = Color.Red,
     fillColor: Color = Color.Yellow,
     stroke: Stroke = Stroke(),
@@ -177,8 +179,7 @@ fun DrawScope.drawCanvasObjects(
             // outline
             if (hasBoundary) {
                 with(boundingRect) {
-                    val boundaryBox = Size(3.dp.toPx(), 3.dp.toPx())
-                    val rotateOval = Size(6.dp.toPx(), 6.dp.toPx())
+                    val boundaryBox = Size(4.dp.toPx() / properties.scale, 4.dp.toPx() / properties.scale)
                     // boundary
                     val boundary = Path().apply {
                         moveTo(topLeft + Offset(boundaryBox.width, 0f))
@@ -194,20 +195,18 @@ fun DrawScope.drawCanvasObjects(
                         lineTo(topLeft + Offset(0f, boundaryBox.height))
                     }
                     val outlinePath = Path().apply {
-                        addRect(topLeft.calculateRectFromCenter(boundaryBox))
-                        addRect(topRight.calculateRectFromCenter(boundaryBox))
-                        addRect(bottomLeft.calculateRectFromCenter(boundaryBox))
-                        addRect(bottomRight.calculateRectFromCenter(boundaryBox))
+                        addRoundRect(topLeft.calculateRectFromCenter(boundaryBox))
+                        addRoundRect(topRight.calculateRectFromCenter(boundaryBox))
+                        addRoundRect(bottomLeft.calculateRectFromCenter(boundaryBox))
+                        addRoundRect(bottomRight.calculateRectFromCenter(boundaryBox))
                         addPath(boundary)
-
-                        // draw rotate
-
-                        addOval(oval = Rect(topCenter - Offset(0f, 20.dp.toPx()), rotateOval))
+                        // draw rotate icon
+                        addRoundRect((topCenter - Offset(0f, 20.dp.toPx())).calculateRectFromCenter(boundaryBox))
                     }
                     drawPath(
                         path = outlinePath,
                         color = boundaryColor,
-                        style = Stroke(width = 1.dp.toPx(), join = StrokeJoin.Miter)
+                        style = Stroke(width = 1.dp.toPx() / properties.scale, join = StrokeJoin.Miter)
                     )
                 }
             }
@@ -226,7 +225,10 @@ private fun Offset.distanceBetween(other: Offset): Float =
 private fun Offset.divideSegment(other: Offset, ratio: Float): Offset =
     Offset((1 - ratio) * other.x + ratio * this.x, (1 - ratio) * other.y + ratio * this.y)
 
-private fun Offset.calculateRectFromCenter(size: Size): Rect {
+private fun Offset.calculateRectFromCenter(size: Size): RoundRect {
     val half = Offset(size.width, size.height)
-    return Rect(topLeft = this - half, bottomRight = this + half)
+    return RoundRect(
+        rect = Rect(topLeft = this - half, bottomRight = this + half),
+        cornerRadius = CornerRadius(2f, 2f)
+    )
 }

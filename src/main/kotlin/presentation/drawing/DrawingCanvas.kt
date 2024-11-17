@@ -32,7 +32,6 @@ import models.*
 import ui.DrawItAppTheme
 import java.util.*
 
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DrawingCanvas(
@@ -41,9 +40,10 @@ private fun DrawingCanvas(
     properties: CanvasPropertiesState,
     drawnObjects: CanvasDrawnObjects,
     onAddItem: (CanvasItemModel) -> Unit,
-    onSelectItem: (CanvasItemModel) -> Unit,
+    onSelectItem: (UUID) -> Unit,
     onPanSelectedItem: (item: UUID, pan: Offset) -> Unit,
     onResizeSelectedItem: (item: UUID, rect: Rect) -> Unit,
+    onRotateSelectedItem: (item: UUID, degree: Float) -> Unit,
     onZoomCanvas: (Float) -> Unit,
     onPanCanvas: (Offset) -> Unit,
     modifier: Modifier = Modifier,
@@ -67,10 +67,12 @@ private fun DrawingCanvas(
             .observeItemInteractions(
                 enabled = state.isSelectAction,
                 items = drawnObjects,
+                properties = properties,
                 onSelectObject = onSelectItem,
                 onPanCanvasItem = onPanSelectedItem,
                 onDeselectObject = onDeSelectItem,
-                onResizeCanvasItem = onResizeSelectedItem
+                onResizeCanvasItem = onResizeSelectedItem,
+                onRotateItem = onRotateSelectedItem
             )
     ) {
         Spacer(
@@ -115,9 +117,21 @@ private fun DrawingCanvas(
                         },
                         drawBlock = {
                             drawnObjects.canvasItems.fastForEach { drawObject ->
-                                scale(1f / drawObject.scale) {
+                                withTransform(
+                                    transformBlock = {
+                                        scale(
+                                            scale = drawObject.reciprocalScale,
+                                            pivot = drawObject.boundingRect.center
+                                        )
+                                        rotate(
+                                            degrees = drawObject.rotateInDegrees,
+                                            pivot = drawObject.boundingRect.center
+                                        )
+                                    },
+                                ) {
                                     drawCanvasObjects(
                                         boundingRect = drawObject.boundingRect,
+                                        properties = properties,
                                         action = drawObject.action,
                                         stroke = Stroke(
                                             width = drawObject.strokeWidth.width.toPx(),
@@ -142,6 +156,7 @@ private fun DrawingCanvas(
                     state.selectedDrawAction?.let { drawAction ->
                         drawCanvasObjects(
                             boundingRect = Rect(startOffset, endOffset),
+                            properties = properties,
                             action = drawAction,
                             stroke = Stroke(
                                 width = style.strokeOption.width.toPx(),
@@ -184,6 +199,9 @@ fun DrawingCanvas(
         onPanCanvas = { onCanvasPropertiesEvent(CanvasPropertiesEvent.OnPanCanvas(it)) },
         onPanSelectedItem = { item, pan -> onInteractionEvent(CanvasItemEvent.OnMoveSelectedItem(item, pan)) },
         onResizeSelectedItem = { item, rect -> onInteractionEvent(CanvasItemEvent.OnResizeSelectedItem(item, rect)) },
+        onRotateSelectedItem = { item, degree ->
+            onInteractionEvent(CanvasItemEvent.OnRotateSelectedItem(item, degree))
+        },
         modifier = modifier,
     )
 }

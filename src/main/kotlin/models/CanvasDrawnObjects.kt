@@ -10,4 +10,7 @@ data class CanvasDrawnObjects(
 ) {
     val selectedItem: CanvasItemModel?
         get() = canvasItems.find { it.uuid == selectedUUID }
+
+    val itemsUUIDS: List<UUID>
+        get() = canvasItems.map(CanvasItemModel::uuid)
 }

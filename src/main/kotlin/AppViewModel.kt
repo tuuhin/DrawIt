@@ -87,9 +87,9 @@ class AppViewModel {
             }
 
             is CanvasItemEvent.OnSelectCanvasItem -> {
-                val allItems = _canvasObjects.value.canvasItems
-                if (event.item !in allItems) return
-                _canvasObjects.update { objectModel -> objectModel.copy(selectedUUID = event.item.uuid) }
+                val allItems = _canvasObjects.value.itemsUUIDS
+                if (event.itemUUID !in allItems) return
+                _canvasObjects.update { objectModel -> objectModel.copy(selectedUUID = event.itemUUID) }
             }
 
             is CanvasItemEvent.OnAddNewCanvasItem -> {
@@ -122,6 +122,14 @@ class AppViewModel {
                 val items = _canvasObjects.value.canvasItems.map { item ->
                     if (event.itemUUID == item.uuid)
                         with(event.newRect) { item.copy(start = topLeft, end = bottomRight) }
+                    else item
+                }
+                _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = items) }
+            }
+
+            is CanvasItemEvent.OnRotateSelectedItem -> {
+                val items = _canvasObjects.value.canvasItems.map { item ->
+                    if (event.itemUUID == item.uuid) item.copy(rotateInDegrees = event.degree)
                     else item
                 }
                 _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = items) }

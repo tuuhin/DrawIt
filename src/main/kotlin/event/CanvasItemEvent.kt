@@ -7,8 +7,9 @@ import java.util.*
 
 sealed interface CanvasItemEvent {
     data class OnAddNewCanvasItem(val item: CanvasItemModel) : CanvasItemEvent
-    data class OnSelectCanvasItem(val item: CanvasItemModel) : CanvasItemEvent
+    data class OnSelectCanvasItem(val itemUUID: UUID) : CanvasItemEvent
     data object OnDeSelectCanvasItem : CanvasItemEvent
     data class OnMoveSelectedItem(val itemUUID: UUID, val panOffset: Offset) : CanvasItemEvent
     data class OnResizeSelectedItem(val itemUUID: UUID, val newRect: Rect) : CanvasItemEvent
+    data class OnRotateSelectedItem(val itemUUID: UUID, val degree: Float) : CanvasItemEvent
 }
