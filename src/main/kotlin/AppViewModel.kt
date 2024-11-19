@@ -51,7 +51,7 @@ class AppViewModel {
                 _canvasScale, _showGridLines
             ) { undoEnabled, redoEnabled, pan, scale, showGrid ->
                 CanvasPropertiesState(
-                    scale = scale,
+                    canvasScale = scale,
                     panedCanvas = pan,
                     undoEnabled,
                     redoEnabled,
@@ -129,7 +129,7 @@ class AppViewModel {
 
             is CanvasItemEvent.OnRotateSelectedItem -> {
                 val items = _canvasObjects.value.canvasItems.map { item ->
-                    if (event.itemUUID == item.uuid) item.copy(rotateInDegrees = event.degree)
+                    if (event.itemUUID == item.uuid) item.copy(rotateInRadians = event.degree)
                     else item
                 }
                 _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = items) }

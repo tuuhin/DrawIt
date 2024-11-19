@@ -1,4 +1,4 @@
-package presentation.drawing
+package presentation.drawing.utils
 
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -8,18 +8,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.center
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toOffset
 import models.CanvasDrawnObjects
-import models.CanvasItemModel
+import models.CanvasItemModel.Companion.AXLE_POSITION_OFFSET
 import models.CanvasPropertiesState
-import org.jetbrains.skiko.Cursor
 import utils.thenIf
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.sign
+
+private val POINTER_RANGE = -5f..5f
 
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun Modifier.observeItemInteractions(
@@ -34,9 +40,16 @@ internal fun Modifier.observeItemInteractions(
 ) = composed {
     if (!enabled) return@composed Modifier
 
+    // We need to use the center as the pivot for scaling purpose as all the components
+    // are scaled w.r.t to the center of the canvas
     var componentCenter by remember { mutableStateOf(Offset.Zero) }
-    var itemBoundary by remember { mutableStateOf(CanvasItemBoundary()) }
+
+    var itemBoundary by remember { mutableStateOf(CanvasItemPointerPosition()) }
+
+    // flag to indicate if the canvas item is being resized as we cannot move the item on resize
     var isResizing by remember { mutableStateOf(false) }
+    // flag to indicate if the canvas item is being rotated as again move is not allowed during rotating
+    var isRotate by remember { mutableStateOf(false) }
 
     val transformableState = rememberTransformableState(
         onTransformation = { _, panChange, _ ->
@@ -45,14 +58,14 @@ internal fun Modifier.observeItemInteractions(
         },
     )
 
-    val isSelectedAndNotOnBoundary by remember(items.selectedUUID, itemBoundary.isOnBoundary) {
-        derivedStateOf { items.selectedUUID != null && !itemBoundary.isOnBoundary }
+    val isSelectedAndNotOnBoundary by remember(items.selectedUUID, itemBoundary) {
+        derivedStateOf { items.selectedUUID != null && !itemBoundary.isOnBoundary && !itemBoundary.isRotateAxle }
     }
 
     val scaledCanvasItemsBoundaryRect by remember(items.canvasItems, properties, componentCenter) {
         derivedStateOf {
             items.canvasItems.map { item ->
-                item.uuid to item.modifyRectViaProperties(properties, componentCenter)
+                item.uuid to item.modifiedRectFromProperties(properties, componentCenter)
             }
         }
     }
@@ -63,23 +76,27 @@ internal fun Modifier.observeItemInteractions(
         // check if the point is inside item
         val isInside = scaledCanvasItemsBoundaryRect.any { (_, item) -> item.contains(change.position) }
         // set inside if the item is inside and not resizing
-        itemBoundary = itemBoundary.copy(isInside = isInside && !isResizing)
+        itemBoundary = itemBoundary.copy(isInside = isInside && !isResizing && !isRotate)
         // get the selected item if present
         val selectedItem = items.selectedItem ?: return@onPointerEvent
 
         if (isResizing) {
             // resize it as per the conditions
             val newRect = itemBoundary.toNewBounds(
-                rect = selectedItem.boundingRect,
+                item = selectedItem,
                 newPosition = change.position,
-                properties = properties
+                properties = properties,
+                pivot = componentCenter
             )
             onResizeCanvasItem(selectedItem.uuid, newRect)
+        } else if (isRotate) {
+            val angle = itemBoundary.toNewRotateAngle(selectedItem, change.position)
+            onRotateItem(selectedItem.uuid, angle)
         } else {
-            val scaledItem = selectedItem.modifyRectViaProperties(properties = properties, pivot = componentCenter)
+            val scaledItem = selectedItem.modifiedRectFromProperties(properties = properties, pivot = componentCenter)
             with(scaledItem) {
                 // if the hover points not in interaction boundary, no need to consider them
-                if (!insideInteractionBoundary(change.position)) {
+                if (!insideInteractionBoundary(change.position, inflateDelta = 20.dp.toPx())) {
                     // reset the boundary params
                     itemBoundary = itemBoundary.resetBoundaryPoints()
                     return@onPointerEvent
@@ -93,7 +110,8 @@ internal fun Modifier.observeItemInteractions(
                     onTBoundary = onTopBoundary(change.position),
                     onBBoundary = onBottomBoundary(change.position),
                     onLBoundary = onLeftBoundary(change.position),
-                    onRBoundary = onRightBoundary(change.position)
+                    onRBoundary = onRightBoundary(change.position),
+                    isRotateAxle = onRotationAxlePosition(change.position, this@onPointerEvent)
                 )
             }
         }
@@ -101,19 +119,23 @@ internal fun Modifier.observeItemInteractions(
         val change = event.changes.firstOrNull() ?: return@onPointerEvent
         // if the item is on the boundary, then its set resize to true
         if (itemBoundary.isOnBoundary) isResizing = true
+        else if (itemBoundary.isRotateAxle) isRotate = true
         // select the item if it matches
         scaledCanvasItemsBoundaryRect.findLast { (_, rect) -> rect.contains(change.position) }
             ?.let { (uuid, _) -> onSelectObject(uuid) }
             ?: kotlin.run {
                 if (isResizing) return@run
+                if (isRotate) return@run
                 onDeselectObject()
                 // on deselected resizing is automatically false
                 isResizing = false
+                isRotate = false
             }
     }.onPointerEvent(eventType = PointerEventType.Release, pass = PointerEventPass.Final) { event ->
-        if (!isResizing && event.changes.isEmpty()) return@onPointerEvent
+        if (event.changes.isEmpty()) return@onPointerEvent
         // on release is resizing is false and the initial point is also zero
-        isResizing = false
+        if (isResizing) isResizing = false
+        if (isRotate) isRotate = false
     }
         .transformable(state = transformableState, enabled = isSelectedAndNotOnBoundary)
         .selectHoverIcon(boundary = itemBoundary)
@@ -141,7 +163,7 @@ internal fun Modifier.doubleScrollOrZoom(
 )
 
 private fun Modifier.selectHoverIcon(
-    boundary: CanvasItemBoundary,
+    boundary: CanvasItemPointerPosition,
 ) = composed {
 
     val hasIcon by remember(boundary) { derivedStateOf { boundary.cursorIcon != null } }
@@ -153,20 +175,31 @@ private fun Modifier.selectHoverIcon(
     )
 }
 
-private fun Rect.insideInteractionBoundary(offset: Offset, delta: Float = 5f) =
-    inflate(delta).contains(offset) && !deflate(delta).contains(offset)
+private fun Rect.insideInteractionBoundary(
+    offset: Offset,
+    inflateDelta: Float = POINTER_RANGE.endInclusive,
+    deflateDelta: Float = POINTER_RANGE.endInclusive,
+) = inflate(inflateDelta).contains(offset) && !deflate(deflateDelta).contains(offset)
 
-private fun Rect.onTopBoundary(offset: Offset) = offset.y - top in (-5f..5f) &&
+private fun Rect.onTopBoundary(offset: Offset) = offset.y - top in POINTER_RANGE &&
         offset.x > left && offset.x < right
 
-private fun Rect.onBottomBoundary(offset: Offset) = offset.y - bottom in (-5f..5f) &&
+private fun Rect.onBottomBoundary(offset: Offset) = offset.y - bottom in POINTER_RANGE &&
         offset.x > left && offset.x < right
 
-private fun Rect.onLeftBoundary(offset: Offset) = offset.x - left in (-5f..5f) &&
+private fun Rect.onLeftBoundary(offset: Offset) = offset.x - left in POINTER_RANGE &&
         offset.y > top && offset.y < bottom
 
-private fun Rect.onRightBoundary(offset: Offset) = offset.x - right in (-5f..5f) &&
+private fun Rect.onRightBoundary(offset: Offset) = offset.x - right in POINTER_RANGE &&
         offset.y > top && offset.y < bottom
+
+private fun Rect.onRotationAxlePosition(offset: Offset, density: Density) = with(density) {
+    with(density) {
+        val axleOffPosition = topCenter - Offset(0f, AXLE_POSITION_OFFSET)
+        offset kindOfEqualTo axleOffPosition
+    }
+}
+
 
 private fun Rect.kindOfTopLeftCorner(offset: Offset) = offset kindOfEqualTo topLeft
 private fun Rect.kindOfBottomRightCorner(offset: Offset) = offset kindOfEqualTo bottomRight
@@ -174,87 +207,5 @@ private fun Rect.kindOfTopRightCorner(offset: Offset) = offset kindOfEqualTo top
 private fun Rect.kindOfBottomLeftCorner(offset: Offset) = offset kindOfEqualTo bottomLeft
 
 private infix fun Offset.kindOfEqualTo(other: Offset): Boolean = (this - other).let { diff ->
-    diff.x in (-5f..5f) && diff.y in (-5f..5f)
-}
-
-private fun CanvasItemModel.modifyRectViaProperties(properties: CanvasPropertiesState, pivot: Offset): Rect {
-    val calScale = properties.scale / scale
-    return with(boundingRect) {
-        // Calculate distances from pivot to each edge
-        val distanceLeft = left - pivot.x
-        val distanceTop = top - pivot.y
-        val distanceRight = right - pivot.x
-        val distanceBottom = bottom - pivot.y
-
-        // Apply scaling to each distance
-        val scaledLeft = pivot.x + distanceLeft * calScale
-        val scaledTop = pivot.y + distanceTop * calScale
-        val scaledRight = pivot.x + distanceRight * calScale
-        val scaledBottom = pivot.y + distanceBottom * calScale
-
-        // Return the new scaled rectangle
-        Rect(left = scaledLeft, top = scaledTop, right = scaledRight, bottom = scaledBottom)
-            .translate(properties.pannedScaledOffset)
-    }
-}
-
-private data class CanvasItemBoundary(
-    val onNEBoundary: Boolean = false,
-    val onNWBoundary: Boolean = false,
-    val onSEBoundary: Boolean = false,
-    val onSWBoundary: Boolean = false,
-    val onTBoundary: Boolean = false,
-    val onBBoundary: Boolean = false,
-    val onLBoundary: Boolean = false,
-    val onRBoundary: Boolean = false,
-    val isInside: Boolean = false,
-) {
-    private val isVertical: Boolean
-        get() = onTBoundary || onBBoundary
-
-    private val isHorizontal: Boolean
-        get() = onLBoundary || onRBoundary
-
-    val isCorner: Boolean
-        get() = onNEBoundary || onNWBoundary || onSWBoundary || onSEBoundary
-
-    val isOnBoundary: Boolean
-        get() = isCorner || isVertical || isHorizontal
-
-    val cursorIcon: PointerIcon?
-        get() {
-            val cursor = when {
-                isInside -> Cursor.MOVE_CURSOR
-                onNEBoundary -> Cursor.NE_RESIZE_CURSOR
-                onNWBoundary -> Cursor.NW_RESIZE_CURSOR
-                onSEBoundary -> Cursor.SE_RESIZE_CURSOR
-                onSWBoundary -> Cursor.SW_RESIZE_CURSOR
-                onTBoundary -> Cursor.N_RESIZE_CURSOR
-                onBBoundary -> Cursor.S_RESIZE_CURSOR
-                onLBoundary -> Cursor.W_RESIZE_CURSOR
-                onRBoundary -> Cursor.E_RESIZE_CURSOR
-                else -> null
-            }
-            return cursor?.let { PointerIcon(Cursor.getPredefinedCursor(it)) }
-        }
-
-    fun resetBoundaryPoints() = CanvasItemBoundary(isInside = isInside)
-
-    fun toNewBounds(rect: Rect, newPosition: Offset, properties: CanvasPropertiesState): Rect {
-        val position = newPosition - properties.pannedScaledOffset
-        return with(rect) {
-            when {
-                onNEBoundary -> Rect(left, position.y, position.x, bottom)
-                onNWBoundary -> Rect(position.x, position.y, right, bottom)
-                onSEBoundary -> Rect(left, top, position.x, position.y)
-                onSWBoundary -> Rect(position.x, top, right, position.y)
-                else -> Rect(
-                    left = if (onLBoundary) position.x else left,
-                    top = if (onTBoundary) position.y else top,
-                    right = if (onRBoundary) position.x else right,
-                    bottom = if (onBBoundary) position.y else bottom
-                )
-            }
-        }
-    }
+    diff.x in POINTER_RANGE && diff.y in POINTER_RANGE
 }

@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
+import models.CanvasItemModel.Companion.AXLE_POSITION_OFFSET
 import models.CanvasPropertiesState
 import models.actions.CanvasDrawAction
 import kotlin.math.pow
@@ -179,7 +180,7 @@ fun DrawScope.drawCanvasObjects(
             // outline
             if (hasBoundary) {
                 with(boundingRect) {
-                    val boundaryBox = Size(4.dp.toPx() / properties.scale, 4.dp.toPx() / properties.scale)
+                    val boundaryBox = (3.dp.toPx() / properties.canvasScale).toSize()
                     // boundary
                     val boundary = Path().apply {
                         moveTo(topLeft + Offset(boundaryBox.width, 0f))
@@ -201,12 +202,13 @@ fun DrawScope.drawCanvasObjects(
                         addRoundRect(bottomRight.calculateRectFromCenter(boundaryBox))
                         addPath(boundary)
                         // draw rotate icon
-                        addRoundRect((topCenter - Offset(0f, 20.dp.toPx())).calculateRectFromCenter(boundaryBox))
+                        val axleOffPosition = Offset(0f, AXLE_POSITION_OFFSET)
+                        addRoundRect((topCenter - axleOffPosition).calculateRectFromCenter(boundaryBox))
                     }
                     drawPath(
                         path = outlinePath,
                         color = boundaryColor,
-                        style = Stroke(width = 1.dp.toPx() / properties.scale, join = StrokeJoin.Miter)
+                        style = Stroke(width = 1.dp.toPx() / properties.canvasScale, join = StrokeJoin.Miter)
                     )
                 }
             }
@@ -232,3 +234,5 @@ private fun Offset.calculateRectFromCenter(size: Size): RoundRect {
         cornerRadius = CornerRadius(2f, 2f)
     )
 }
+
+private fun Float.toSize() = Size(this, this)

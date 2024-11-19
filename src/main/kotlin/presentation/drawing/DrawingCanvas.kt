@@ -29,6 +29,9 @@ import mapper.foregroundColor
 import mapper.toPathEffect
 import mapper.width
 import models.*
+import presentation.drawing.utils.doubleScrollOrZoom
+import presentation.drawing.utils.drawGraphLines
+import presentation.drawing.utils.observeItemInteractions
 import ui.DrawItAppTheme
 import java.util.*
 
@@ -88,11 +91,11 @@ private fun DrawingCanvas(
                         // create and action
                         state.selectedDrawAction?.let { action ->
                             val item = CanvasItemModel(
-                                start = startOffset - properties.pannedScaledOffset,
-                                end = endOffset - properties.pannedScaledOffset,
+                                start = startOffset - properties.panedScaledOffset,
+                                end = endOffset - properties.panedScaledOffset,
                                 action = action,
                                 style = styleState,
-                                scale = properties.scale
+                                scale = properties.canvasScale
                             )
                             // create a new object
                             onAddItem(item)
@@ -107,12 +110,12 @@ private fun DrawingCanvas(
                     },
                     onDrag = { amount -> endOffset += amount },
                 )
-                .drawGraphLines(showGraph = properties.showGraphLines)
+                .drawGraphLines(showGraph = true)
                 .drawBehind {
                     // this will draw the stuff
                     withTransform(
                         transformBlock = {
-                            scale(scale = properties.scale)
+                            scale(scale = properties.canvasScale, pivot = center)
                             translate(left = properties.panedCanvas.x, top = properties.panedCanvas.y)
                         },
                         drawBlock = {
@@ -124,7 +127,7 @@ private fun DrawingCanvas(
                                             pivot = drawObject.boundingRect.center
                                         )
                                         rotate(
-                                            degrees = drawObject.rotateInDegrees,
+                                            degrees = drawObject.rotateInDegree,
                                             pivot = drawObject.boundingRect.center
                                         )
                                     },

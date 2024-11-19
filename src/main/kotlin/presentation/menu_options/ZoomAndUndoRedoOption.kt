@@ -185,7 +185,7 @@ fun ZoomAndUndoRedoOption(
     shape: Shape = MaterialTheme.shapes.small,
 ) {
     ZoomAndUndoRedoOption(
-        scale = properties.scale,
+        scale = properties.canvasScale,
         isRedoEnabled = properties.redoEnabled,
         isUndoEnabled = properties.undoEnabled,
         onRedo = { onEvent(CanvasPropertiesEvent.OnRedo) },

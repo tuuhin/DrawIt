@@ -1,4 +1,4 @@
-package presentation.drawing
+package presentation.drawing.utils
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -12,11 +12,11 @@ import androidx.compose.ui.unit.dp
 fun Modifier.drawGraphLines(showGraph: Boolean = false) = composed {
     if (!showGraph) return@composed Modifier
 
-    val lineColor = MaterialTheme.colorScheme.onSurface
+    val lineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f)
     drawBehind {
 
         val strokeWidth = .2.dp.toPx()
-        val space = 25.dp.toPx()
+        val space = 20.dp.toPx()
 
         repeat(size.width.toInt() / space.toInt()) {
             drawLine(

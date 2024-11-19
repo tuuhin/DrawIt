@@ -2,6 +2,8 @@ package models
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import models.actions.CanvasDrawAction
 import models.canvas.CanvasColorOptions
 import models.canvas.CornerRoundnessOption
@@ -16,7 +18,7 @@ data class CanvasItemModel(
     val action: CanvasDrawAction,
     val style: CanvasDrawStyle = CanvasDrawStyle(),
     val scale: Float = 1f,
-    val rotateInDegrees: Float = 0f,
+    val rotateInRadians: Float = 0f,
 ) {
     val strokeColor: CanvasColorOptions
         get() = style.strokeColor
@@ -41,4 +43,13 @@ data class CanvasItemModel(
 
     val reciprocalScale: Float
         get() = 1 / scale
+
+    val rotateInDegree: Float
+        get() = Math.toDegrees(rotateInRadians.toDouble()).toFloat()
+
+    companion object {
+        // multiplier from top center position
+        val Density.AXLE_POSITION_OFFSET: Float
+            get() = 20.dp.toPx()
+    }
 }
