@@ -13,22 +13,16 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toOffset
 import models.CanvasDrawnObjects
-import models.CanvasItemModel.Companion.AXLE_POSITION_OFFSET
 import models.CanvasPropertiesState
 import utils.thenIf
 import java.util.*
-import kotlin.math.abs
-import kotlin.math.sign
-
-private val POINTER_RANGE = -5f..5f
 
 @OptIn(ExperimentalComposeUiApi::class)
-internal fun Modifier.observeItemInteractions(
+fun Modifier.observeItemInteractions(
     items: CanvasDrawnObjects,
     properties: CanvasPropertiesState,
     onSelectObject: (UUID) -> Unit,
@@ -53,13 +47,13 @@ internal fun Modifier.observeItemInteractions(
 
     val transformableState = rememberTransformableState(
         onTransformation = { _, panChange, _ ->
-            if (isResizing) return@rememberTransformableState
+            if (isResizing || isRotate) return@rememberTransformableState
             items.selectedUUID?.let { item -> onPanCanvasItem(item, panChange) }
         },
     )
 
     val isSelectedAndNotOnBoundary by remember(items.selectedUUID, itemBoundary) {
-        derivedStateOf { items.selectedUUID != null && !itemBoundary.isOnBoundary && !itemBoundary.isRotateAxle }
+        derivedStateOf { items.selectedUUID != null && itemBoundary.isNotOrBoundaryOrAxle }
     }
 
     val scaledCanvasItemsBoundaryRect by remember(items.canvasItems, properties, componentCenter) {
@@ -84,7 +78,7 @@ internal fun Modifier.observeItemInteractions(
             // resize it as per the conditions
             val newRect = itemBoundary.toNewBounds(
                 item = selectedItem,
-                newPosition = change.position,
+                position = change.position,
                 properties = properties,
                 pivot = componentCenter
             )
@@ -103,10 +97,10 @@ internal fun Modifier.observeItemInteractions(
                 }
                 // check for points for boundary extensions
                 itemBoundary = itemBoundary.copy(
-                    onNEBoundary = kindOfTopRightCorner(change.position),
-                    onNWBoundary = kindOfTopLeftCorner(change.position),
-                    onSWBoundary = kindOfBottomLeftCorner(change.position),
-                    onSEBoundary = kindOfBottomRightCorner(change.position),
+                    onNEBoundary = isOnTopRightBoundary(change.position),
+                    onNWBoundary = isOnTopLeftBoundary(change.position),
+                    onSWBoundary = isOnBottomLeftBoundary(change.position),
+                    onSEBoundary = isOnBottomRightBoundary(change.position),
                     onTBoundary = onTopBoundary(change.position),
                     onBBoundary = onBottomBoundary(change.position),
                     onLBoundary = onLeftBoundary(change.position),
@@ -142,26 +136,6 @@ internal fun Modifier.observeItemInteractions(
         .onSizeChanged { size -> componentCenter = size.center.toOffset() }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
-internal fun Modifier.doubleScrollOrZoom(
-    onPan: (Offset) -> Unit,
-    onZoom: (Float) -> Unit,
-    speed: Float = 10f,
-) = then(
-    Modifier.onPointerEvent(eventType = PointerEventType.Scroll) { event ->
-        val change = event.changes.firstOrNull() ?: return@onPointerEvent
-        val scrollDelta = change.scrollDelta * -1f
-        // FIXME: Fix the problems regrading proper scroll
-
-        // zoom events are made when a scroll delta y component is 1 or -1
-        if (abs(scrollDelta.y) == 1f) {
-            val zoomSign = scrollDelta.y.sign
-            onZoom(zoomSign)
-        }
-        onPan(scrollDelta.times(speed))
-    }
-)
-
 private fun Modifier.selectHoverIcon(
     boundary: CanvasItemPointerPosition,
 ) = composed {
@@ -173,39 +147,4 @@ private fun Modifier.selectHoverIcon(
         condition = hasIcon,
         modifier = cursorIcon?.let { cursor -> pointerHoverIcon(cursor) }
     )
-}
-
-private fun Rect.insideInteractionBoundary(
-    offset: Offset,
-    inflateDelta: Float = POINTER_RANGE.endInclusive,
-    deflateDelta: Float = POINTER_RANGE.endInclusive,
-) = inflate(inflateDelta).contains(offset) && !deflate(deflateDelta).contains(offset)
-
-private fun Rect.onTopBoundary(offset: Offset) = offset.y - top in POINTER_RANGE &&
-        offset.x > left && offset.x < right
-
-private fun Rect.onBottomBoundary(offset: Offset) = offset.y - bottom in POINTER_RANGE &&
-        offset.x > left && offset.x < right
-
-private fun Rect.onLeftBoundary(offset: Offset) = offset.x - left in POINTER_RANGE &&
-        offset.y > top && offset.y < bottom
-
-private fun Rect.onRightBoundary(offset: Offset) = offset.x - right in POINTER_RANGE &&
-        offset.y > top && offset.y < bottom
-
-private fun Rect.onRotationAxlePosition(offset: Offset, density: Density) = with(density) {
-    with(density) {
-        val axleOffPosition = topCenter - Offset(0f, AXLE_POSITION_OFFSET)
-        offset kindOfEqualTo axleOffPosition
-    }
-}
-
-
-private fun Rect.kindOfTopLeftCorner(offset: Offset) = offset kindOfEqualTo topLeft
-private fun Rect.kindOfBottomRightCorner(offset: Offset) = offset kindOfEqualTo bottomRight
-private fun Rect.kindOfTopRightCorner(offset: Offset) = offset kindOfEqualTo topRight
-private fun Rect.kindOfBottomLeftCorner(offset: Offset) = offset kindOfEqualTo bottomLeft
-
-private infix fun Offset.kindOfEqualTo(other: Offset): Boolean = (this - other).let { diff ->
-    diff.x in POINTER_RANGE && diff.y in POINTER_RANGE
 }

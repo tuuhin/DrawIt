@@ -4,10 +4,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import models.CanvasItemModel
 import models.CanvasPropertiesState
-import kotlin.math.cos
-import kotlin.math.sin
+import models.CenterPivotRotatedRect
 
-fun CanvasItemModel.modifiedRectFromProperties(properties: CanvasPropertiesState, pivot: Offset): Rect {
+fun CanvasItemModel.modifiedRectFromProperties(properties: CanvasPropertiesState, pivot: Offset)
+        : CenterPivotRotatedRect {
     val calScale = properties.canvasScale / scale
     return with(boundingRect) {
         // Calculate distances from pivot to each edge
@@ -23,41 +23,9 @@ fun CanvasItemModel.modifiedRectFromProperties(properties: CanvasPropertiesState
         val scaledBottom = pivot.y + distanceBottom * calScale
 
         // Return the new scaled rectangle
-        Rect(left = scaledLeft, top = scaledTop, right = scaledRight, bottom = scaledBottom)
+        val rect = Rect(left = scaledLeft, top = scaledTop, right = scaledRight, bottom = scaledBottom)
             .translate(properties.panedScaledOffset)
-            .rotate(rotateInRadians)
+
+        CenterPivotRotatedRect.fromRectAndAngle(rect, rotateInRadians)
     }
-}
-
-fun rotatePoint(x: Float, y: Float, pivot: Offset, radians: Float): Offset {
-    val dx = x - pivot.x
-    val dy = y - pivot.y
-    val rotatedX = cos(radians) * dx - sin(radians) * dy + pivot.x
-    val rotatedY = sin(radians) * dx + cos(radians) * dy + pivot.y
-    return Offset(rotatedX, rotatedY)
-}
-
-fun reverseRotatePoint(x: Float, y: Float, pivot: Offset, radians: Float): Offset {
-    val dx = x - pivot.x
-    val dy = y - pivot.y
-    val rotatedX = cos(-radians) * dx - sin(-radians) * dy + pivot.x
-    val rotatedY = sin(-radians) * dx + cos(-radians) * dy + pivot.y
-    return Offset(rotatedX, rotatedY)
-}
-
-
-private fun Rect.rotate(radians: Float): Rect {
-    val corners = listOf(
-        rotatePoint(left, top, center, radians),
-        rotatePoint(right, top, center, radians),
-        rotatePoint(left, bottom, center, radians),
-        rotatePoint(right, bottom, center, radians)
-    )
-    val newLeft = corners.minOf { it.x }
-    val newTop = corners.minOf { it.y }
-    val newRight = corners.maxOf { it.x }
-    val newBottom = corners.maxOf { it.y }
-
-    // Return the new rectangle
-    return Rect(newLeft, newTop, newRight, newBottom)
 }

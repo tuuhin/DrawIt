@@ -3,15 +3,11 @@ package presentation.drawing.utils
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.unit.Density
 import models.CanvasItemModel
-import models.CanvasItemModel.Companion.AXLE_POSITION_OFFSET
 import models.CanvasPropertiesState
 import org.jetbrains.skiko.Cursor
 import kotlin.math.PI
 import kotlin.math.acos
-import kotlin.math.pow
-import kotlin.math.sqrt
 
 data class CanvasItemPointerPosition(
     val onNEBoundary: Boolean = false,
@@ -60,54 +56,49 @@ data class CanvasItemPointerPosition(
 
     fun resetBoundaryPoints() = CanvasItemPointerPosition(isInside = isInside)
 
-    fun toNewBounds(
-        item: CanvasItemModel,
-        newPosition: Offset,
-        properties: CanvasPropertiesState,
-        pivot: Offset,
-    ): Rect {
-        val scaledPosition = ((newPosition - pivot) * item.scale) / properties.canvasScale
-        val position = scaledPosition + pivot - properties.panedCanvas
+    fun toNewBounds(item: CanvasItemModel, position: Offset, properties: CanvasPropertiesState, pivot: Offset): Rect {
+
+        val scaledPosition = (position - pivot) * (item.scale / properties.canvasScale)
+        val finalPosition = scaledPosition + pivot - properties.panedCanvas
+
         return with(item.boundingRect) {
             when {
-                onNEBoundary -> Rect(left, position.y, position.x, bottom)
-                onNWBoundary -> Rect(position.x, position.y, right, bottom)
-                onSEBoundary -> Rect(left, top, position.x, position.y)
-                onSWBoundary -> Rect(position.x, top, right, position.y)
+                onNEBoundary -> Rect(left, finalPosition.y, finalPosition.x, bottom)
+                onNWBoundary -> Rect(finalPosition.x, finalPosition.y, right, bottom)
+                onSEBoundary -> Rect(left, top, finalPosition.x, finalPosition.y)
+                onSWBoundary -> Rect(finalPosition.x, top, right, finalPosition.y)
                 else -> Rect(
-                    left = if (onLBoundary) position.x else left,
-                    top = if (onTBoundary) position.y else top,
-                    right = if (onRBoundary) position.x else right,
-                    bottom = if (onBBoundary) position.y else bottom
+                    left = if (onLBoundary) finalPosition.x else left,
+                    top = if (onTBoundary) finalPosition.y else top,
+                    right = if (onRBoundary) finalPosition.x else right,
+                    bottom = if (onBBoundary) finalPosition.y else bottom
                 )
             }
         }
+
     }
 
-    fun toNewRotateAngle(
-        item: CanvasItemModel,
-        newPosition: Offset,
-        density: Density,
-    ) = with(item.boundingRect) {
-        val otherPoint = topCenter - with(density) { Offset(0f, AXLE_POSITION_OFFSET) }
-        val distanceAxleToNewPos = Offset(otherPoint.x - center.x, otherPoint.y - center.y)
-        val distanceCenterToNewPos = Offset(newPosition.x - center.x, newPosition.y - center.y)
+    fun toNewRotateAngle(item: CanvasItemModel, newPosition: Offset): Float {
 
-        val dotProduct = distanceAxleToNewPos.x * distanceCenterToNewPos.x +
-                distanceAxleToNewPos.y * distanceCenterToNewPos.y
+        val centerToTopCenter = with(item.boundingRect) { topCenter - center }
+        val centerToNewPos = with(item.boundingRect) { newPosition - center }
 
-        val magnitudeAB = sqrt(distanceAxleToNewPos.x.pow(2) + distanceAxleToNewPos.y.pow(2))
-        val magnitudeBC = sqrt(distanceCenterToNewPos.x.pow(2) + distanceCenterToNewPos.y.pow(2))
+        val dotProduct = centerToTopCenter.x * centerToNewPos.x + centerToTopCenter.y * centerToNewPos.y
+
+        val magnitudeAB = centerToTopCenter.getDistance()
+        val magnitudeBC = centerToNewPos.getDistance()
+
+        val distanceProduct = magnitudeAB * magnitudeBC
 
         // Avoid division by zero
-        if (magnitudeAB == 0.0f || magnitudeBC == 0.0f) return 0.0f
+        if (distanceProduct == 0.0f) return 0.0f
 
-        val cosTheta = (dotProduct / (magnitudeAB * magnitudeBC)).coerceIn(-1.0f..1.0f)
+        val cosTheta = (dotProduct / distanceProduct).coerceIn(-1.0f..1.0f)
         val angleInRadians = acos(cosTheta)
 
         // adjust the angles
-        val isOtherHalf = center.x - newPosition.x < 0
-        if (isOtherHalf) angleInRadians
+        val isOtherHalf = item.boundingRect.center.x - newPosition.x < 0
+        return if (isOtherHalf) angleInRadians
         else (2 * PI - angleInRadians).toFloat()
     }
 }
