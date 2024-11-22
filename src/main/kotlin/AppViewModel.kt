@@ -1,4 +1,5 @@
 import androidx.compose.ui.geometry.Offset
+import co.touchlab.kermit.Logger
 import event.CanvasDrawStyleEvent
 import event.CanvasItemEvent
 import event.CanvasPropertiesEvent
@@ -213,7 +214,7 @@ class AppViewModel {
     }
 
     fun cleanUp() {
-        println("VIEW MODEL CLEARED ")
+        Logger.d { "VIEW MODEL CLEARED" }
         viewModelScope.cancel()
     }
 

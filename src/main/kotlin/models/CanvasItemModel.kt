@@ -10,6 +10,7 @@ import models.canvas.CornerRoundnessOption
 import models.canvas.PathEffectOptions
 import models.canvas.StrokeWidthOption
 import java.util.*
+import kotlin.math.PI
 
 data class CanvasItemModel(
     val uuid: UUID = UUID.randomUUID(),
@@ -45,7 +46,10 @@ data class CanvasItemModel(
         get() = 1 / scale
 
     val rotateInDegree: Float
-        get() = Math.toDegrees(rotateInRadians.toDouble()).toFloat()
+        get() {
+            val normalizedRadians = rotateInRadians % (2 * PI)
+            return Math.toDegrees(normalizedRadians).toFloat()
+        }
 
     companion object {
         // multiplier from top center position

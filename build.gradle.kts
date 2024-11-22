@@ -24,6 +24,8 @@ dependencies {
     implementation(compose.material3)
     implementation(compose.components.resources)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
+    implementation("co.touchlab:kermit:2.0.4")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:2.0.21")
 }
 
 compose.desktop {

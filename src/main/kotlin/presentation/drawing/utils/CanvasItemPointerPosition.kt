@@ -3,9 +3,12 @@ package presentation.drawing.utils
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.unit.Density
 import models.CanvasItemModel
+import models.CanvasItemModel.Companion.AXLE_POSITION_OFFSET
 import models.CanvasPropertiesState
 import org.jetbrains.skiko.Cursor
+import kotlin.math.PI
 import kotlin.math.acos
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -33,6 +36,9 @@ data class CanvasItemPointerPosition(
 
     val isOnBoundary: Boolean
         get() = isCorner || isVertical || isHorizontal
+
+    val isNotOrBoundaryOrAxle: Boolean
+        get() = !isOnBoundary || !isRotateAxle
 
     val cursorIcon: PointerIcon?
         get() {
@@ -78,26 +84,30 @@ data class CanvasItemPointerPosition(
         }
     }
 
-    fun toNewRotateAngle(item: CanvasItemModel, newPosition: Offset): Float {
-        with(item.boundingRect) {
-            val otherPoint = Offset(center.x, newPosition.y)
-            val distanceAxleToNewPos = Offset(otherPoint.x - center.x, otherPoint.y - center.y)
-            val distanceCenterToNewPos = Offset(newPosition.x - center.x, newPosition.y - center.y)
+    fun toNewRotateAngle(
+        item: CanvasItemModel,
+        newPosition: Offset,
+        density: Density,
+    ) = with(item.boundingRect) {
+        val otherPoint = topCenter - with(density) { Offset(0f, AXLE_POSITION_OFFSET) }
+        val distanceAxleToNewPos = Offset(otherPoint.x - center.x, otherPoint.y - center.y)
+        val distanceCenterToNewPos = Offset(newPosition.x - center.x, newPosition.y - center.y)
 
-            val dotProduct = distanceAxleToNewPos.x * distanceCenterToNewPos.x +
-                    distanceAxleToNewPos.y * distanceCenterToNewPos.y
+        val dotProduct = distanceAxleToNewPos.x * distanceCenterToNewPos.x +
+                distanceAxleToNewPos.y * distanceCenterToNewPos.y
 
-            val magnitudeAB = sqrt(distanceAxleToNewPos.x.pow(2) + distanceAxleToNewPos.y.pow(2))
-            val magnitudeBC = sqrt(distanceCenterToNewPos.x.pow(2) + distanceCenterToNewPos.y.pow(2))
+        val magnitudeAB = sqrt(distanceAxleToNewPos.x.pow(2) + distanceAxleToNewPos.y.pow(2))
+        val magnitudeBC = sqrt(distanceCenterToNewPos.x.pow(2) + distanceCenterToNewPos.y.pow(2))
 
-            // Avoid division by zero
-            if (magnitudeAB == 0.0f || magnitudeBC == 0.0f) return 0.0f
+        // Avoid division by zero
+        if (magnitudeAB == 0.0f || magnitudeBC == 0.0f) return 0.0f
 
-            val cosTheta = (dotProduct / (magnitudeAB * magnitudeBC)).toDouble()
+        val cosTheta = (dotProduct / (magnitudeAB * magnitudeBC)).coerceIn(-1.0f..1.0f)
+        val angleInRadians = acos(cosTheta)
 
-            val angle = Math.toDegrees(acos(cosTheta.coerceIn(-1.0, 1.0))).toFloat()
-            println(angle)
-            return angle
-        }
+        // adjust the angles
+        val isOtherHalf = center.x - newPosition.x < 0
+        if (isOtherHalf) angleInRadians
+        else (2 * PI - angleInRadians).toFloat()
     }
 }
