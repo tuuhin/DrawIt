@@ -15,6 +15,7 @@ import models.CanvasDrawnObjects
 import models.CanvasPropertiesState
 import models.actions.ActionBarActions
 import models.actions.CanvasUtilAction
+import models.canvas.CanvasColorOptions
 import kotlin.math.exp
 
 class AppViewModel {
@@ -142,11 +143,17 @@ class AppViewModel {
     fun onDrawStyleChange(event: CanvasDrawStyleEvent) {
         when (event) {
             is CanvasDrawStyleEvent.OnAlphaChange -> _drawStyle.update { state -> state.copy(alpha = event.alpha) }
-            is CanvasDrawStyleEvent.OnBackgroundColorChange -> _drawStyle.update { state -> state.copy(background = event.colorOptions) }
+            is CanvasDrawStyleEvent.OnBackgroundColorChange -> _drawStyle.update { state ->
+                if (event.colorOptions == CanvasColorOptions.BASE)
+                    state.copy(background = event.colorOptions, backgroundFill = null)
+                else state.copy(background = event.colorOptions)
+            }
+
             is CanvasDrawStyleEvent.OnPathEffectChange -> _drawStyle.update { state -> state.copy(pathEffect = event.pathEffectOptions) }
             is CanvasDrawStyleEvent.OnStrokeColorChange -> _drawStyle.update { state -> state.copy(strokeColor = event.colorOptions) }
             is CanvasDrawStyleEvent.OnStrokeOptionChange -> _drawStyle.update { state -> state.copy(strokeOption = event.option) }
             is CanvasDrawStyleEvent.OnRoundnessChange -> _drawStyle.update { state -> state.copy(roundness = event.roundness) }
+            is CanvasDrawStyleEvent.OnBackgroundFillChange -> _drawStyle.update { state -> state.copy(backgroundFill = event.fill) }
         }
         // update the selected object
         val canvasObjects = _canvasObjects.value

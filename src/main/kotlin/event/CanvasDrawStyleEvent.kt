@@ -1,9 +1,6 @@
 package event
 
-import models.canvas.CanvasColorOptions
-import models.canvas.CornerRoundnessOption
-import models.canvas.PathEffectOptions
-import models.canvas.StrokeWidthOption
+import models.canvas.*
 
 sealed interface CanvasDrawStyleEvent {
 
@@ -13,5 +10,6 @@ sealed interface CanvasDrawStyleEvent {
     data class OnPathEffectChange(val pathEffectOptions: PathEffectOptions) : CanvasDrawStyleEvent
     data class OnAlphaChange(val alpha: Float) : CanvasDrawStyleEvent
     data class OnRoundnessChange(val roundness: CornerRoundnessOption) : CanvasDrawStyleEvent
+    data class OnBackgroundFillChange(val fill: BackgroundFillOptions) : CanvasDrawStyleEvent
 
 }

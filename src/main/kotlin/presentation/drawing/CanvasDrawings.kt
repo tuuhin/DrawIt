@@ -4,16 +4,12 @@ import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Fill
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.unit.dp
 import models.CanvasItemModel.Companion.AXLE_POSITION_OFFSET
 import models.CanvasPropertiesState
 import models.actions.CanvasDrawAction
-import kotlin.math.pow
-import kotlin.math.sqrt
+import models.canvas.BackgroundFillOptions
 
 fun DrawScope.drawCanvasObjects(
     boundingRect: Rect,
@@ -21,6 +17,7 @@ fun DrawScope.drawCanvasObjects(
     properties: CanvasPropertiesState,
     strokeColor: Color = Color.Red,
     fillColor: Color = Color.Yellow,
+    fillMode: BackgroundFillOptions? = null,
     stroke: Stroke = Stroke(),
     alpha: Float = 1f,
     isRounded: Boolean = false,
@@ -39,14 +36,14 @@ fun DrawScope.drawCanvasObjects(
                 close()
             }
             // draw background
-            if (fillColor != Color.Transparent) {
-                drawPath(
-                    path = path,
-                    style = Fill,
-                    alpha = alpha,
-                    color = fillColor,
-                )
-            }
+            drawBackground(
+                path = path,
+                boundingRect = boundingRect,
+                fillMode = fillMode,
+                alpha = alpha,
+                fillColor = fillColor
+            )
+            // draw content
             drawPath(
                 path = path,
                 style = stroke,
@@ -64,14 +61,13 @@ fun DrawScope.drawCanvasObjects(
                 close()
             }
             // draw background
-            if (fillColor != Color.Transparent) {
-                drawPath(
-                    path = path,
-                    style = Fill,
-                    alpha = alpha,
-                    color = fillColor,
-                )
-            }
+            drawBackground(
+                path = path,
+                boundingRect = boundingRect,
+                fillMode = fillMode,
+                alpha = alpha,
+                fillColor = fillColor
+            )
             drawPath(
                 path = path,
                 style = stroke,
@@ -110,14 +106,13 @@ fun DrawScope.drawCanvasObjects(
                 close()
             }
             // draw background
-            if (fillColor != Color.Transparent) {
-                drawPath(
-                    path = path,
-                    color = fillColor,
-                    style = Fill,
-                    alpha = alpha,
-                )
-            }
+            drawBackground(
+                path = path,
+                boundingRect = boundingRect,
+                fillMode = fillMode,
+                alpha = alpha,
+                fillColor = fillColor
+            )
             // draw the outline
             drawPath(path = path, color = strokeColor, style = stroke, alpha = alpha)
         }
@@ -134,7 +129,7 @@ fun DrawScope.drawCanvasObjects(
         // draw arrow change it to path mode later
         CanvasDrawAction.ACTION_ARROW -> {
 
-            val length = with(boundingRect) { topLeft.distanceBetween(bottomRight) }
+            val length = with(boundingRect) { (topLeft - bottomRight).getDistance() }
             val arrowSize = 16.dp.toPx().let { size -> if (length >= size) size else length }
             val ratio = arrowSize / length
             val arrowStart = with(boundingRect) { topLeft.divideSegment(bottomRight, ratio) }
@@ -218,11 +213,61 @@ fun DrawScope.drawCanvasObjects(
     }
 }
 
-internal fun Path.moveTo(offset: Offset) = moveTo(offset.x, offset.y)
-internal fun Path.lineTo(offset: Offset) = lineTo(offset.x, offset.y)
+private fun DrawScope.drawBackground(
+    path: Path,
+    boundingRect: Rect,
+    fillMode: BackgroundFillOptions? = null,
+    alpha: Float,
+    fillColor: Color,
+) {
+    if (fillMode == null || fillColor == Color.Transparent) return
+    when (fillMode) {
 
-private fun Offset.distanceBetween(other: Offset): Float =
-    sqrt((this.x - other.x).pow(2) + (this.y - other.y).pow(2))
+        BackgroundFillOptions.SOLID -> drawPath(
+            path = path,
+            style = Fill,
+            alpha = alpha,
+            color = fillColor,
+        )
+
+        BackgroundFillOptions.CROSS_HATCH -> clipPath(path) {
+            val difference = 4.dp.toPx()
+
+            val noOfHorizontalLines = (boundingRect.height / difference).toInt()
+            val noOfVerticalLines = (boundingRect.width / difference).toInt()
+
+            // horizontal
+            repeat(noOfHorizontalLines) {
+                val hStart = Offset(boundingRect.left, boundingRect.top + difference * it)
+                val hEnd = Offset(boundingRect.right, boundingRect.top + difference * it)
+                drawLine(color = fillColor, start = hStart, end = hEnd)
+            }
+            //vertical
+            repeat(noOfVerticalLines) {
+                val vStart = Offset(boundingRect.left + difference * it, boundingRect.top)
+                val vEnd = Offset(boundingRect.left + difference * it, boundingRect.bottom)
+                drawLine(color = fillColor, start = vStart, end = vEnd)
+            }
+        }
+
+        BackgroundFillOptions.SINGLE_HATCH -> clipPath(path) {
+            val difference = 4.dp.toPx()
+
+            val noOfHorizontalLines = (boundingRect.height / difference).toInt()
+
+            // horizontal
+            repeat(noOfHorizontalLines) {
+                val hStart = Offset(boundingRect.left, boundingRect.top + difference * it)
+                val hEnd = Offset(boundingRect.right, boundingRect.top + difference * it)
+                drawLine(color = fillColor, start = hStart, end = hEnd)
+            }
+        }
+    }
+}
+
+
+private fun Path.moveTo(offset: Offset) = moveTo(offset.x, offset.y)
+private fun Path.lineTo(offset: Offset) = lineTo(offset.x, offset.y)
 
 private fun Offset.divideSegment(other: Offset, ratio: Float): Offset =
     Offset((1 - ratio) * other.x + ratio * this.x, (1 - ratio) * other.y + ratio * this.y)
