@@ -31,6 +31,10 @@ fun PathEffectPicker(
     modifier: Modifier = Modifier,
     headingStyle: TextStyle = MaterialTheme.typography.labelMedium,
     headingColor: Color = MaterialTheme.colorScheme.onSurface,
+    selectedContainer: Color = MaterialTheme.colorScheme.primaryContainer,
+    onSelectedContainer: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    unSelectedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    onUnSelectedContainer: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
@@ -41,26 +45,22 @@ fun PathEffectPicker(
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             PathEffectOptions.entries.forEach { pathEffectOption ->
 
-                val onBoxColor = if (pathEffect == pathEffectOption)
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                else
-                    MaterialTheme.colorScheme.onSurface
+                val contentColor = if (pathEffect == pathEffectOption) onSelectedContainer
+                else onUnSelectedContainer
 
-                val boxColor = if (pathEffect == pathEffectOption)
-                    MaterialTheme.colorScheme.primaryContainer
-                else
-                    MaterialTheme.colorScheme.surfaceContainerHigh
+                val containerColor = if (pathEffect == pathEffectOption) selectedContainer
+                else unSelectedContainerColor
 
                 Box(
                     modifier = Modifier.size(32.dp)
                         .pointerHoverIcon(PointerIcon.Hand)
                         .clip(MaterialTheme.shapes.small)
                         .clickable(onClick = { onPathEffectChange(pathEffectOption) })
-                        .background(boxColor)
+                        .background(containerColor)
                         .padding(4.dp)
                         .drawBehind {
                             drawLine(
-                                color = onBoxColor,
+                                color = contentColor,
                                 start = Offset(size.width * .25f, size.height * .5f),
                                 end = Offset(size.width * .75f, size.height * .5f),
                                 strokeWidth = StrokeWidthOption.THIN.width.toPx(),

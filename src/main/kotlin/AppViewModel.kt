@@ -15,6 +15,7 @@ import models.CanvasDrawnObjects
 import models.CanvasPropertiesState
 import models.actions.ActionBarActions
 import models.actions.CanvasUtilAction
+import models.canvas.BackgroundFillOptions
 import models.canvas.CanvasColorOptions
 import kotlin.math.exp
 
@@ -146,7 +147,10 @@ class AppViewModel {
             is CanvasDrawStyleEvent.OnBackgroundColorChange -> _drawStyle.update { state ->
                 if (event.colorOptions == CanvasColorOptions.BASE)
                     state.copy(background = event.colorOptions, backgroundFill = null)
-                else state.copy(background = event.colorOptions)
+                else state.copy(
+                    background = event.colorOptions,
+                    backgroundFill = state.backgroundFill ?: BackgroundFillOptions.SOLID
+                )
             }
 
             is CanvasDrawStyleEvent.OnPathEffectChange -> _drawStyle.update { state -> state.copy(pathEffect = event.pathEffectOptions) }

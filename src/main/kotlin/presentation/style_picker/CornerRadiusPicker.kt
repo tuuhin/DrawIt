@@ -32,7 +32,7 @@ fun CornerRadiusPicker(
     headingColor: Color = MaterialTheme.colorScheme.onSurface,
     selectedContainer: Color = MaterialTheme.colorScheme.primaryContainer,
     onSelectedContainer: Color = MaterialTheme.colorScheme.onPrimaryContainer,
-    unSelectedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    unSelectedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     onUnSelectedContainer: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Column(
@@ -56,7 +56,7 @@ fun CornerRadiusPicker(
                 ) {
                     Spacer(
                         modifier = Modifier.matchParentSize()
-                            .padding(6.dp)
+                            .padding(8.dp)
                             .drawWithCache {
                                 val rect = Rect(Offset.Zero, size)
                                 val color = if (isSelected) onSelectedContainer else onUnSelectedContainer

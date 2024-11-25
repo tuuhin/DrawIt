@@ -6,6 +6,7 @@
     <string name="style_option_opacity">Opacity</string>
     <string name="style_option_path_effect">Stroke Style</string>
     <string name="style_option_stroke_width">Stroke Width</string>
+    <string name="style_option_background_fill_type">Fill</string>
     <string name="canvas_action_undo">Undo</string>
     <string name="canvas_action_redo">Redo</string>
     <string name="canvas_action_zoom_in">ZoomIn</string>

@@ -28,6 +28,10 @@ fun StrokeWidthPicker(
     modifier: Modifier = Modifier,
     headingStyle: TextStyle = MaterialTheme.typography.labelMedium,
     headingColor: Color = MaterialTheme.colorScheme.onSurface,
+    selectedContainer: Color = MaterialTheme.colorScheme.primaryContainer,
+    onSelectedContainer: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    unSelectedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    onUnSelectedContainer: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Column(
         modifier = modifier,
@@ -41,13 +45,11 @@ fun StrokeWidthPicker(
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             StrokeWidthOption.entries.forEach { strokeOption ->
 
-                val strokeColor = if (canvasStrokeOption == strokeOption)
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                else MaterialTheme.colorScheme.onSurface
+                val strokeColor = if (canvasStrokeOption == strokeOption) onSelectedContainer
+                else onUnSelectedContainer
 
-                val boxColor = if (canvasStrokeOption == strokeOption)
-                    MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surfaceContainerHigh
+                val boxColor = if (canvasStrokeOption == strokeOption) selectedContainer
+                else unSelectedContainerColor
 
                 Box(
                     modifier = Modifier.size(32.dp)

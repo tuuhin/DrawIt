@@ -1,6 +1,6 @@
 package presentation.style_picker
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,9 +16,12 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.eva.draw_it.drawit.generated.resources.Res
@@ -38,10 +41,15 @@ fun BackgroundFillPicker(
     headingColor: Color = MaterialTheme.colorScheme.onSurface,
     selectedContainer: Color = MaterialTheme.colorScheme.primaryContainer,
     onSelectedContainer: Color = MaterialTheme.colorScheme.onPrimaryContainer,
-    unSelectedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    unSelectedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     onUnSelectedContainer: Color = MaterialTheme.colorScheme.onSurface,
 ) {
-    AnimatedVisibility(visible = showPicker, modifier = modifier) {
+    AnimatedVisibility(
+        visible = showPicker,
+        enter = expandVertically() + fadeIn(),
+        exit = shrinkVertically() + fadeOut(),
+        modifier = modifier,
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = stringResource(Res.string.style_option_background_fill_type),
@@ -51,10 +59,10 @@ fun BackgroundFillPicker(
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 BackgroundFillOptions.entries.forEach { option ->
                     val isSelected = option == fillOption
-                    val color = if (isSelected) onSelectedContainer else onUnSelectedContainer
                     Box(
                         modifier = Modifier.size(32.dp)
                             .clip(MaterialTheme.shapes.small)
+                            .pointerHoverIcon(PointerIcon.Hand)
                             .background(if (isSelected) selectedContainer else unSelectedContainerColor)
                             .clickable { onFillOptionChange(option) }
                     ) {
@@ -62,13 +70,20 @@ fun BackgroundFillPicker(
                             modifier = Modifier.matchParentSize()
                                 .padding(6.dp)
                                 .drawWithCache {
-
                                     val path = Path().apply {
-                                        addRoundRect(RoundRect(Rect(Offset.Zero, size), CornerRadius(4.dp.toPx())))
+                                        addRoundRect(
+                                            RoundRect(
+                                                rect = Rect(offset = Offset.Zero, size = size),
+                                                cornerRadius = CornerRadius(4.dp.toPx())
+                                            )
+                                        )
                                     }
 
+                                    val color = if (isSelected) onSelectedContainer else onUnSelectedContainer
                                     val heightRatio = size.height / NO_OF_LINES
                                     val widthRatio = size.width / NO_OF_LINES
+
+                                    val strokeWidth = 1.2.dp.toPx()
 
                                     onDrawBehind {
                                         when (option) {
@@ -82,17 +97,29 @@ fun BackgroundFillPicker(
                                                 drawPath(
                                                     path = path,
                                                     color = color,
-                                                    style = Stroke(width = 1.dp.toPx())
+                                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
                                                 )
                                                 repeat(NO_OF_LINES) {
                                                     // horizontal
                                                     val hStart = Offset(0f, heightRatio * it)
                                                     val hEnd = Offset(size.width, heightRatio * it)
-                                                    drawLine(color = color, start = hStart, end = hEnd)
+                                                    drawLine(
+                                                        color = color,
+                                                        start = hStart,
+                                                        end = hEnd,
+                                                        strokeWidth = strokeWidth,
+                                                        cap = StrokeCap.Butt
+                                                    )
                                                     //vertical
                                                     val vStart = Offset(widthRatio * it, 0f)
                                                     val vEnd = Offset(widthRatio * it, size.height)
-                                                    drawLine(color = color, start = vStart, end = vEnd)
+                                                    drawLine(
+                                                        color = color,
+                                                        start = vStart,
+                                                        end = vEnd,
+                                                        strokeWidth = strokeWidth,
+                                                        cap = StrokeCap.Butt
+                                                    )
                                                 }
                                             }
 
@@ -100,12 +127,18 @@ fun BackgroundFillPicker(
                                                 drawPath(
                                                     path = path,
                                                     color = color,
-                                                    style = Stroke(width = 1.dp.toPx())
+                                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
                                                 )
                                                 repeat(NO_OF_LINES) {
                                                     val start = Offset(0f, heightRatio * it)
                                                     val end = Offset(size.width, heightRatio * it)
-                                                    drawLine(color = color, start = start, end = end)
+                                                    drawLine(
+                                                        color = color,
+                                                        start = start,
+                                                        end = end,
+                                                        strokeWidth = strokeWidth,
+                                                        cap = StrokeCap.Butt,
+                                                    )
                                                 }
                                             }
                                         }

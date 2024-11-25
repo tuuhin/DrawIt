@@ -1,6 +1,5 @@
 package presentation.style_picker
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,7 +8,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -38,22 +44,32 @@ fun BackgroundColorPicker(
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             CanvasColorOptions.entries.forEach { color ->
                 Box(
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(32.dp)
                         .clip(MaterialTheme.shapes.small)
-                        .background(color.backgroundColor)
                         .pointerHoverIcon(PointerIcon.Hand)
                         .clickable(onClick = { onBackgroundColorChange(color) })
-                        .thenIf(
+                        .drawWithCache {
+                            val rect = Rect(Offset.Zero, size).deflate(4.dp.toPx())
+                            val path = Path().apply {
+                                addRoundRect(RoundRect(rect, CornerRadius(4.dp.toPx())))
+                            }
+                            val backgroundColor = if (color == CanvasColorOptions.BASE) Color.Gray.copy(alpha = .5f)
+                            else color.backgroundColor
+
+                            onDrawBehind {
+                                drawPath(path = path, color = backgroundColor, style = Fill)
+                            }
+                        }.thenIf(
                             condition = color == backGroundColor,
                             modifier = Modifier.border(
                                 width = 2.dp,
                                 color = MaterialTheme.colorScheme.primary,
                                 shape = MaterialTheme.shapes.small
                             )
-                        )
+                        ),
                 )
             }
         }
-    }
 
+    }
 }
