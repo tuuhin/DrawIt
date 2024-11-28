@@ -45,11 +45,13 @@ data class CanvasItemModel(
     val reciprocalScale: Float
         get() = 1 / scale
 
+
     val rotateInDegree: Float
         get() {
-            val normalizedRadians = rotateInRadians % (2 * PI)
-            return Math.toDegrees(normalizedRadians).toFloat()
+            val normalize = ((rotateInRadians % (2 * PI)) + 2 * PI) % (2 * PI)
+            return Math.toDegrees(normalize).toFloat()
         }
+
 
     companion object {
         // multiplier from top center position

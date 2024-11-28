@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toOffset
 import models.CanvasDrawnObjects
+import models.CanvasItemModel
+import models.CanvasItemPointerPosition
 import models.CanvasPropertiesState
 import utils.thenIf
 import java.util.*
@@ -78,9 +80,9 @@ fun Modifier.observeItemInteractions(
             // resize it as per the conditions
             val newRect = itemBoundary.toNewBounds(
                 item = selectedItem,
-                position = change.position,
+                pointerPosition = change.position,
                 properties = properties,
-                pivot = componentCenter
+                canvasCenter = componentCenter
             )
             onResizeCanvasItem(selectedItem.uuid, newRect)
         } else if (isRotate) {
@@ -96,17 +98,7 @@ fun Modifier.observeItemInteractions(
                     return@onPointerEvent
                 }
                 // check for points for boundary extensions
-                itemBoundary = itemBoundary.copy(
-                    onNEBoundary = isOnTopRightBoundary(change.position),
-                    onNWBoundary = isOnTopLeftBoundary(change.position),
-                    onSWBoundary = isOnBottomLeftBoundary(change.position),
-                    onSEBoundary = isOnBottomRightBoundary(change.position),
-                    onTBoundary = onTopBoundary(change.position),
-                    onBBoundary = onBottomBoundary(change.position),
-                    onLBoundary = onLeftBoundary(change.position),
-                    onRBoundary = onRightBoundary(change.position),
-                    isRotateAxle = onRotationAxlePosition(change.position, this@onPointerEvent)
-                )
+                itemBoundary = scaledItem.updatePointerPosition(change.position, this@onPointerEvent)
             }
         }
     }.onPointerEvent(eventType = PointerEventType.Press, pass = PointerEventPass.Final) { event ->
@@ -132,19 +124,21 @@ fun Modifier.observeItemInteractions(
         if (isRotate) isRotate = false
     }
         .transformable(state = transformableState, enabled = isSelectedAndNotOnBoundary)
-        .selectHoverIcon(boundary = itemBoundary)
+        .selectHoverIcon(boundary = itemBoundary, selectedItem = items.selectedItem)
         .onSizeChanged { size -> componentCenter = size.center.toOffset() }
 }
 
 private fun Modifier.selectHoverIcon(
+    selectedItem: CanvasItemModel?,
     boundary: CanvasItemPointerPosition,
 ) = composed {
 
-    val hasIcon by remember(boundary) { derivedStateOf { boundary.cursorIcon != null } }
-    val cursorIcon = remember(boundary) { boundary.cursorIcon }
+    val cursorIcon = remember(boundary) {
+        boundary.pickCursorIcon(selectedItem?.rotateInRadians ?: 0.0f)
+    }
 
     thenIf(
-        condition = hasIcon,
+        condition = selectedItem != null,
         modifier = cursorIcon?.let { cursor -> pointerHoverIcon(cursor) }
     )
 }
