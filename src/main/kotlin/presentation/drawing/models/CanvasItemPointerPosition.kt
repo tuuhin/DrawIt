@@ -1,8 +1,10 @@
-package models
+package presentation.drawing.models
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerIcon
+import models.CanvasItemModel
+import models.CanvasPropertiesState
 import org.jetbrains.skiko.Cursor
 import kotlin.math.PI
 import kotlin.math.acos
@@ -38,7 +40,7 @@ data class CanvasItemPointerPosition(
 
 
     private fun evaluateCursor(rotation: Float): Int {
-        val normalize = ((rotation % (2 * PI)) + 2 * PI) % (2 * PI)
+        val normalize = (((rotation + PI / 8) % (2 * PI)) + 2 * PI) % (2 * PI)
 
         val angleDegree = Math.toDegrees(normalize).roundToInt()
         return when (angleDegree) {
@@ -54,7 +56,6 @@ data class CanvasItemPointerPosition(
     }
 
     fun pickCursorIcon(rotation: Float): PointerIcon? {
-
         val cursor = when {
             isRotateAxle -> Cursor.HAND_CURSOR
             isInside -> Cursor.MOVE_CURSOR
@@ -78,31 +79,31 @@ data class CanvasItemPointerPosition(
         pointerPosition: Offset,
         properties: CanvasPropertiesState,
         canvasCenter: Offset,
-    ): Rect {
-        val newRect = with(item.boundingRect) {
+    ): Rect = with(item.boundingRect) {
 
-            val scaleFactor = item.scale / properties.canvasScale
-            val scaledPosition = (pointerPosition - canvasCenter) * scaleFactor
-            val finalPos = scaledPosition + canvasCenter - properties.panedCanvas
+        val scaleFactor = item.scale / properties.canvasScale
+        val scaledPosition = (pointerPosition - canvasCenter) * scaleFactor
+        val position = scaledPosition + canvasCenter - properties.panedCanvas
 
-            val position = CenterPivotRotatedRect.rotatePoint(
-                position = finalPos,
-                pivot = center,
-                radians = -item.rotateInRadians
-            )
+        val finalPosition = CenterPivotRotatedRect.rotatePoint(
+            position = position,
+            pivot = center,
+            radians = -item.rotateInRadians
+        )
 
-            // Adjust the bounds based on the rotated position
-            when {
-                onNECorner -> copy(top = position.y, right = position.x)
-                onNWCorner -> copy(left = position.x, top = position.y)
-                onSECorner -> copy(right = position.x, bottom = position.y)
-                onSWCorner -> copy(left = position.x, bottom = position.y)
-                onLBoundary -> copy(left = position.x)
-                onTBoundary -> copy(top = position.y)
-                onRBoundary -> copy(right = position.x)
-                onBBoundary -> copy(bottom = position.y)
-                else -> this
-            }
+        //FIXME: Make a better way to rotate the stuff
+        // Yes we can resize the elements but the angle making it difficult to resize them properly
+        // holding it for now.
+        val newRect = when {
+            onNECorner -> copy(top = finalPosition.y, right = finalPosition.x)
+            onNWCorner -> copy(left = finalPosition.x, top = finalPosition.y)
+            onSECorner -> copy(right = finalPosition.x, bottom = finalPosition.y)
+            onSWCorner -> copy(left = finalPosition.x, bottom = finalPosition.y)
+            onLBoundary -> copy(left = finalPosition.x).apply { translate(Offset(0f, center.y - finalPosition.y)) }
+            onTBoundary -> copy(top = finalPosition.y).apply { translate(Offset(center.x - finalPosition.x, 0f)) }
+            onRBoundary -> copy(right = finalPosition.x).apply { translate(Offset(0f, -finalPosition.y)) }
+            onBBoundary -> copy(bottom = finalPosition.y).apply { translate(Offset(finalPosition.x, 0f)) }
+            else -> this
         }
         return newRect
     }

@@ -7,5 +7,8 @@ enum class CanvasDrawAction(val seqNo: Int) : ActionBarActions {
     ACTION_ARROW(5),
     ACTION_LINE(6),
     ACTION_DRAW(7),
-    ACTION_TEXT(8),
+    ACTION_TEXT(8);
+
+    val canHaveBoundary: Boolean
+        get() = this in arrayOf(ACTION_RECT, ACTION_DIAMOND, ACTION_ELLIPSE, ACTION_DRAW)
 }

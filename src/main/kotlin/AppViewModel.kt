@@ -110,32 +110,42 @@ class AppViewModel {
             }
 
             is CanvasItemEvent.OnMoveSelectedItem -> {
-                val items = _canvasObjects.value.canvasItems.map { item ->
-                    if (event.itemUUID == item.uuid) with(item) {
-                        copy(
-                            start = start + event.panOffset,
-                            end = end + event.panOffset
-                        )
-                    } else item
-                }
-                _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = items) }
+                val updatedList = _canvasObjects.value.updateMatchingItem(
+                    predicate = { it.uuid == event.itemUUID },
+                    update = { item ->
+                        _canvasObjects.value.selectedItem?.copy(
+                            start = item.start + event.panOffset,
+                            end = item.end + event.panOffset
+                        ) ?: item
+                    },
+                )
+                _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = updatedList) }
             }
 
             is CanvasItemEvent.OnResizeSelectedItem -> {
-                val items = _canvasObjects.value.canvasItems.map { item ->
-                    if (event.itemUUID == item.uuid)
-                        with(event.newRect) { item.copy(start = topLeft, end = bottomRight) }
-                    else item
-                }
-                _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = items) }
+                val updatedList = _canvasObjects.value.updateMatchingItem(
+                    predicate = { it.uuid == event.itemUUID },
+                    update = { item ->
+                        with(event.newRect) {
+                            _canvasObjects.value.selectedItem?.copy(
+                                start = topLeft,
+                                end = bottomRight
+                            )
+                        } ?: item
+                    },
+                )
+
+                _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = updatedList) }
             }
 
             is CanvasItemEvent.OnRotateSelectedItem -> {
-                val items = _canvasObjects.value.canvasItems.map { item ->
-                    if (event.itemUUID == item.uuid) item.copy(rotateInRadians = event.degree)
-                    else item
-                }
-                _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = items) }
+                val updatedList = _canvasObjects.value.updateMatchingItem(
+                    predicate = { it.uuid == event.itemUUID },
+                    update = { item ->
+                        _canvasObjects.value.selectedItem?.copy(rotateInRadians = event.degree) ?: item
+                    },
+                )
+                _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = updatedList) }
             }
         }
     }
@@ -159,16 +169,14 @@ class AppViewModel {
             is CanvasDrawStyleEvent.OnRoundnessChange -> _drawStyle.update { state -> state.copy(roundness = event.roundness) }
             is CanvasDrawStyleEvent.OnBackgroundFillChange -> _drawStyle.update { state -> state.copy(backgroundFill = event.fill) }
         }
-        // update the selected object
-        val canvasObjects = _canvasObjects.value
-        // update if there is a selected object
-        canvasObjects.selectedUUID?.let { selectedObject ->
-            val result = canvasObjects.canvasItems.map { item ->
-                if (item.uuid == selectedObject) item.copy(style = _drawStyle.value)
-                else item
-            }
-            _canvasObjects.update { it.copy(canvasItems = result) }
-        }
+
+        val updatedList = _canvasObjects.value.updateMatchingItem(
+            predicate = { it.uuid == canvasObjects.value.selectedUUID },
+            update = { item ->
+                _canvasObjects.value.selectedItem?.copy(style = _drawStyle.value) ?: item
+            },
+        )
+        _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = updatedList) }
     }
 
     fun onCanvasPropertiesEvent(event: CanvasPropertiesEvent) {

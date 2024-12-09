@@ -1,10 +1,9 @@
-package presentation.drawing.utils
+package presentation.drawing.models
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import models.CanvasItemModel
 import models.CanvasPropertiesState
-import models.CenterPivotRotatedRect
 
 fun CanvasItemModel.modifiedRectFromProperties(properties: CanvasPropertiesState, pivot: Offset)
         : CenterPivotRotatedRect {

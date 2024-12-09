@@ -45,7 +45,6 @@ data class CanvasItemModel(
     val reciprocalScale: Float
         get() = 1 / scale
 
-
     val rotateInDegree: Float
         get() {
             val normalize = ((rotateInRadians % (2 * PI)) + 2 * PI) % (2 * PI)

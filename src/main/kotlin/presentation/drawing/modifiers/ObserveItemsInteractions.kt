@@ -1,4 +1,4 @@
-package presentation.drawing.utils
+package presentation.drawing.modifiers
 
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -18,8 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toOffset
 import models.CanvasDrawnObjects
 import models.CanvasItemModel
-import models.CanvasItemPointerPosition
 import models.CanvasPropertiesState
+import presentation.drawing.models.CanvasItemPointerPosition
+import presentation.drawing.models.modifiedRectFromProperties
 import utils.thenIf
 import java.util.*
 

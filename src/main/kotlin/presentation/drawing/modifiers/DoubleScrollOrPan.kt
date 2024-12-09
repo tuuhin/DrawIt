@@ -1,4 +1,4 @@
-package presentation.drawing.utils
+package presentation.drawing.modifiers
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier

@@ -1,4 +1,4 @@
-package models
+package presentation.drawing.models
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect

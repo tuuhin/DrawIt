@@ -1,4 +1,4 @@
-package presentation.drawing.utils
+package presentation.drawing.modifiers
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable

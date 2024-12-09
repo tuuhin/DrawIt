@@ -1,4 +1,6 @@
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.eva.draw_it.drawit.generated.resources.Res
@@ -8,12 +10,11 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import ui.DrawItAppTheme
 
-
 fun main() = application {
 
     System.setProperty("skiko.renderApi", "OPENGL")
 
-    val windowState = rememberWindowState()
+    val windowState = rememberWindowState(position = WindowPosition(Alignment.Center))
 
     Window(
         state = windowState,

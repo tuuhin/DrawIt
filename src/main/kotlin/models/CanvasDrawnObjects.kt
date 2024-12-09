@@ -13,4 +13,11 @@ data class CanvasDrawnObjects(
 
     val itemsUUIDS: List<UUID>
         get() = canvasItems.map(CanvasItemModel::uuid)
+
+
+    fun updateMatchingItem(
+        predicate: (CanvasItemModel) -> Boolean,
+        update: (CanvasItemModel) -> CanvasItemModel,
+    ): List<CanvasItemModel> = canvasItems.map { item -> if (predicate(item)) update(item) else item }
+
 }

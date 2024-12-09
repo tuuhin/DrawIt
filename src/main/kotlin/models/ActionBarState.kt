@@ -17,7 +17,10 @@ data class ActionBarState(
     val isSelectAction: Boolean
         get() = action == CanvasUtilAction.ACTION_SELECT
 
-    val isActionDraw: Boolean
-        get() = action is CanvasDrawAction
+    val isSelectedActionDraw: Boolean
+        get() = action is CanvasDrawAction && action == CanvasDrawAction.ACTION_DRAW
+
+    val isSelectedActionPredefinedShape: Boolean
+        get() = action is CanvasDrawAction && action != CanvasDrawAction.ACTION_DRAW
 
 }
