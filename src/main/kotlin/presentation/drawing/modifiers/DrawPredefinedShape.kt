@@ -9,20 +9,14 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerButton
-import androidx.compose.ui.unit.dp
 import mapper.backgroundColor
 import mapper.foregroundColor
-import mapper.toPathEffect
-import mapper.width
 import models.ActionBarState
 import models.CanvasDrawStyle
 import models.CanvasItemModel
 import models.CanvasPropertiesState
 import presentation.drawing.draw_utils.drawCanvasObjects
-
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -50,9 +44,21 @@ fun Modifier.onDrawViaActionBarAction(
         onDragEnd = {
             // create and action
             actionBarState.selectedDrawAction?.let { action ->
+                // perform switch its better place to switch the co-ordinates
+                val startPoint = Offset(
+                    x = if (startOffset.x <= endOffset.x) startOffset.x else endOffset.x,
+                    y = if (startOffset.y <= endOffset.y) startOffset.y else endOffset.y
+                ) - propertiesState.panedScaledOffset
+
+                val endPoint = Offset(
+                    x = if (startOffset.x <= endOffset.x) endOffset.x else startOffset.x,
+                    y = if (startOffset.y <= endOffset.y) endOffset.y else startOffset.y
+                ) - propertiesState.panedScaledOffset
+
+                // add the item
                 val item = CanvasItemModel(
-                    start = startOffset - propertiesState.panedScaledOffset,
-                    end = endOffset - propertiesState.panedScaledOffset,
+                    start = startPoint,
+                    end = endPoint,
                     action = action,
                     style = styleState,
                     scale = propertiesState.canvasScale
@@ -76,14 +82,8 @@ fun Modifier.onDrawViaActionBarAction(
                 boundingRect = Rect(startOffset, endOffset),
                 properties = properties,
                 action = drawAction,
-                stroke = Stroke(
-                    width = style.strokeOption.width.toPx(),
-                    cap = StrokeCap.Round,
-                    pathEffect = style.pathEffect.toPathEffect(
-                        dottedInterval = 6.dp.toPx(),
-                        dashedInterval = 12.dp.toPx()
-                    )
-                ),
+                strokeWidthOption = style.strokeOption,
+                pathEffectOptions = style.pathEffect,
                 strokeColor = style.strokeColor.foregroundColor,
                 fillColor = style.background.backgroundColor,
                 fillMode = style.backgroundFill,

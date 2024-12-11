@@ -156,11 +156,8 @@ class AppViewModel {
             is CanvasDrawStyleEvent.OnAlphaChange -> _drawStyle.update { state -> state.copy(alpha = event.alpha) }
             is CanvasDrawStyleEvent.OnBackgroundColorChange -> _drawStyle.update { state ->
                 if (event.colorOptions == CanvasColorOptions.BASE)
-                    state.copy(background = event.colorOptions, backgroundFill = null)
-                else state.copy(
-                    background = event.colorOptions,
-                    backgroundFill = state.backgroundFill ?: BackgroundFillOptions.SOLID
-                )
+                    state.copy(background = event.colorOptions, backgroundFill = BackgroundFillOptions.NONE)
+                else state.copy(background = event.colorOptions, backgroundFill = state.backgroundFill)
             }
 
             is CanvasDrawStyleEvent.OnPathEffectChange -> _drawStyle.update { state -> state.copy(pathEffect = event.pathEffectOptions) }

@@ -57,7 +57,9 @@ fun BackgroundFillPicker(
                 style = headingStyle,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                BackgroundFillOptions.entries.forEach { option ->
+
+                BackgroundFillOptions.entries.filterNot { it == BackgroundFillOptions.NONE }.forEach { option ->
+
                     val isSelected = option == fillOption
                     Box(
                         modifier = Modifier.size(32.dp)
@@ -87,6 +89,7 @@ fun BackgroundFillPicker(
 
                                     onDrawBehind {
                                         when (option) {
+                                            BackgroundFillOptions.NONE -> {}
                                             BackgroundFillOptions.SOLID -> drawPath(
                                                 path = path,
                                                 color = color,

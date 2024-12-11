@@ -68,7 +68,7 @@ fun CanvasDrawStylePicker(
                 )
                 BackgroundFillPicker(
                     showPicker = style.background != CanvasColorOptions.BASE,
-                    fillOption = style.backgroundFill ?: BackgroundFillOptions.SOLID,
+                    fillOption = style.backgroundFill,
                     onFillOptionChange = onBackgroundFillChange,
                     headingStyle = optionTextStyle,
                     headingColor = optionHeadingColor

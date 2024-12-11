@@ -7,13 +7,15 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.unit.dp
+import mapper.width
 import models.canvas.BackgroundFillOptions
+import models.canvas.StrokeWidthOption
 
 fun DrawScope.drawBackground(
     path: Path,
     boundingRect: Rect,
     fillMode: BackgroundFillOptions? = null,
+    strokeWidthOption: StrokeWidthOption = StrokeWidthOption.THIN,
     alpha: Float,
     fillColor: Color,
 ) {
@@ -28,8 +30,8 @@ fun DrawScope.drawBackground(
         )
 
         BackgroundFillOptions.CROSS_HATCH -> clipPath(path) {
-            val difference = 4.dp.toPx()
 
+            val difference = strokeWidthOption.width.toPx() * 2f
             val noOfHorizontalLines = (boundingRect.height / difference).toInt()
             val noOfVerticalLines = (boundingRect.width / difference).toInt()
 
@@ -48,8 +50,8 @@ fun DrawScope.drawBackground(
         }
 
         BackgroundFillOptions.SINGLE_HATCH -> clipPath(path) {
-            val difference = 4.dp.toPx()
 
+            val difference = strokeWidthOption.width.toPx() * 2f
             val noOfHorizontalLines = (boundingRect.height / difference).toInt()
 
             // horizontal
@@ -59,6 +61,8 @@ fun DrawScope.drawBackground(
                 drawLine(color = fillColor, start = hStart, end = hEnd)
             }
         }
+        // Nothing for none
+        BackgroundFillOptions.NONE -> {}
     }
 }
 

@@ -8,7 +8,7 @@ data class CanvasDrawStyle(
     val pathEffect: PathEffectOptions = PathEffectOptions.SOLID,
     val strokeOption: StrokeWidthOption = StrokeWidthOption.THIN,
     val roundness: CornerRoundnessOption = CornerRoundnessOption.NO_ROUND,
-    val backgroundFill: BackgroundFillOptions? = null,
+    val backgroundFill: BackgroundFillOptions = BackgroundFillOptions.NONE,
     val alpha: Float = 1f,
 ) {
     val isRounded: Boolean

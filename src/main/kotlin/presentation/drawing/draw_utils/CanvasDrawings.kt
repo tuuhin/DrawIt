@@ -6,12 +6,17 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import mapper.toPathEffect
+import mapper.width
 import models.CanvasPropertiesState
 import models.actions.CanvasDrawAction
 import models.canvas.BackgroundFillOptions
+import models.canvas.PathEffectOptions
+import models.canvas.StrokeWidthOption
 
 fun DrawScope.drawCanvasObjects(
     boundingRect: Rect,
@@ -19,9 +24,9 @@ fun DrawScope.drawCanvasObjects(
     properties: CanvasPropertiesState,
     strokeColor: Color = Color.Red,
     fillColor: Color = Color.Yellow,
-    fillMode: BackgroundFillOptions? = null,
-    penPoints: List<Offset> = emptyList(),
-    stroke: Stroke = Stroke(),
+    fillMode: BackgroundFillOptions,
+    strokeWidthOption: StrokeWidthOption,
+    pathEffectOptions: PathEffectOptions,
     alpha: Float = 1f,
     isRounded: Boolean = false,
     hasBoundary: Boolean = false,
@@ -29,7 +34,17 @@ fun DrawScope.drawCanvasObjects(
 ) {
     val basePath = Path()
 
+    val stroke = Stroke(
+        width = strokeWidthOption.width.toPx(),
+        cap = StrokeCap.Round,
+        pathEffect = pathEffectOptions.toPathEffect(
+            dottedInterval = 6.dp.toPx(),
+            dashedInterval = 12.dp.toPx()
+        )
+    )
+
     // draw point at the center
+    // TODO : Remove it later
     drawCircle(color = Color.Red, radius = 2.dp.toPx(), center = boundingRect.center)
 
     when (action) {
@@ -46,6 +61,7 @@ fun DrawScope.drawCanvasObjects(
                 path = path,
                 boundingRect = boundingRect,
                 fillMode = fillMode,
+                strokeWidthOption = strokeWidthOption,
                 alpha = alpha,
                 fillColor = fillColor
             )
@@ -71,6 +87,7 @@ fun DrawScope.drawCanvasObjects(
                 path = path,
                 boundingRect = boundingRect,
                 fillMode = fillMode,
+                strokeWidthOption = strokeWidthOption,
                 alpha = alpha,
                 fillColor = fillColor
             )
@@ -117,6 +134,7 @@ fun DrawScope.drawCanvasObjects(
                 boundingRect = boundingRect,
                 fillMode = fillMode,
                 alpha = alpha,
+                strokeWidthOption = strokeWidthOption,
                 fillColor = fillColor
             )
             // draw the outline
@@ -132,24 +150,13 @@ fun DrawScope.drawCanvasObjects(
             }
             drawPath(path, color = strokeColor, style = stroke, alpha = alpha)
         }
+
         CanvasDrawAction.ACTION_ARROW -> {
             drawArrow(boundingRect = boundingRect, strokeColor = strokeColor, stroke = stroke, alpha = alpha)
         }
 
         CanvasDrawAction.ACTION_DRAW -> {
-            val path = Path().apply {
-                val correctedPoints = penPoints.map { point -> point - properties.panedScaledOffset }
-
-                if (correctedPoints.size < 2) return@apply
-                moveTo(correctedPoints.first())
-                for (point in penPoints.drop(1)) lineTo(point)
-            }
-            drawPath(
-                path = path,
-//                style = stroke,
-                alpha = alpha,
-                color = strokeColor,
-            )
+            // later implement the draw as its special
         }
 
         else -> {}
