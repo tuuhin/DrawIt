@@ -47,10 +47,20 @@ data class CanvasItemModel(
 
     val rotateInDegree: Float
         get() {
-            val normalize = ((rotateInRadians % (2 * PI)) + 2 * PI) % (2 * PI)
+            val normalize = normalizeRadians(rotateInRadians)
             return Math.toDegrees(normalize).toFloat()
         }
 
+    fun updateItemPositionForPan(panOffset: Offset) =
+        copy(start = start + panOffset, end = end + panOffset)
+
+    fun updateItemOnResize(newRect: Rect) =
+        copy(start = newRect.topLeft, end = newRect.bottomRight)
+
+    fun updateItemOnRotate(radians: Float) =
+        copy(rotateInRadians = normalizeRadians(radians).toFloat())
+
+    private fun normalizeRadians(radians: Float): Double = ((radians % (2 * PI)) + 2 * PI) % (2 * PI)
 
     companion object {
         // multiplier from top center position

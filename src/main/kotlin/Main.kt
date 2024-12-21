@@ -3,6 +3,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eva.draw_it.drawit.generated.resources.Res
 import com.eva.draw_it.drawit.generated.resources.app_name
 import com.eva.draw_it.drawit.generated.resources.ic_main
@@ -22,8 +23,11 @@ fun main() = application {
         title = stringResource(Res.string.app_name),
         icon = painterResource(Res.drawable.ic_main),
     ) {
+
+        val viewModel = viewModel { AppViewModel() }
+
         DrawItAppTheme {
-            App()
+            App(viewModel = viewModel)
         }
     }
 }

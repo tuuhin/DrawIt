@@ -1,4 +1,6 @@
 import androidx.compose.ui.geometry.Offset
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import event.CanvasDrawStyleEvent
 import event.CanvasItemEvent
@@ -6,7 +8,6 @@ import event.CanvasPropertiesEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.swing.Swing
 import models.ActionBarState
@@ -15,13 +16,9 @@ import models.CanvasDrawnObjects
 import models.CanvasPropertiesState
 import models.actions.ActionBarActions
 import models.actions.CanvasUtilAction
-import models.canvas.BackgroundFillOptions
-import models.canvas.CanvasColorOptions
 import kotlin.math.exp
 
-class AppViewModel {
-
-    private val viewModelScope: CoroutineScope = CoroutineScope(Dispatchers.Swing + SupervisorJob())
+class AppViewModel : ViewModel(viewModelScope = CoroutineScope(Dispatchers.Swing + SupervisorJob())) {
 
     private val _actionBarState = MutableStateFlow(ActionBarState())
     val actionBarState: StateFlow<ActionBarState>
@@ -112,12 +109,7 @@ class AppViewModel {
             is CanvasItemEvent.OnMoveSelectedItem -> {
                 val updatedList = _canvasObjects.value.updateMatchingItem(
                     predicate = { it.uuid == event.itemUUID },
-                    update = { item ->
-                        _canvasObjects.value.selectedItem?.copy(
-                            start = item.start + event.panOffset,
-                            end = item.end + event.panOffset
-                        ) ?: item
-                    },
+                    update = { item -> item.updateItemPositionForPan(event.panOffset) },
                 )
                 _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = updatedList) }
             }
@@ -125,14 +117,7 @@ class AppViewModel {
             is CanvasItemEvent.OnResizeSelectedItem -> {
                 val updatedList = _canvasObjects.value.updateMatchingItem(
                     predicate = { it.uuid == event.itemUUID },
-                    update = { item ->
-                        with(event.newRect) {
-                            _canvasObjects.value.selectedItem?.copy(
-                                start = topLeft,
-                                end = bottomRight
-                            )
-                        } ?: item
-                    },
+                    update = { item -> item.updateItemOnResize(event.newRect) },
                 )
 
                 _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = updatedList) }
@@ -141,9 +126,7 @@ class AppViewModel {
             is CanvasItemEvent.OnRotateSelectedItem -> {
                 val updatedList = _canvasObjects.value.updateMatchingItem(
                     predicate = { it.uuid == event.itemUUID },
-                    update = { item ->
-                        _canvasObjects.value.selectedItem?.copy(rotateInRadians = event.degree) ?: item
-                    },
+                    update = { item -> item.updateItemOnRotate(event.radians) },
                 )
                 _canvasObjects.update { itemsObject -> itemsObject.copy(canvasItems = updatedList) }
             }
@@ -155,9 +138,7 @@ class AppViewModel {
         when (event) {
             is CanvasDrawStyleEvent.OnAlphaChange -> _drawStyle.update { state -> state.copy(alpha = event.alpha) }
             is CanvasDrawStyleEvent.OnBackgroundColorChange -> _drawStyle.update { state ->
-                if (event.colorOptions == CanvasColorOptions.BASE)
-                    state.copy(background = event.colorOptions, backgroundFill = BackgroundFillOptions.NONE)
-                else state.copy(background = event.colorOptions, backgroundFill = state.backgroundFill)
+                state.onBackgroundColorChange(event.colorOptions)
             }
 
             is CanvasDrawStyleEvent.OnPathEffectChange -> _drawStyle.update { state -> state.copy(pathEffect = event.pathEffectOptions) }
@@ -204,7 +185,6 @@ class AppViewModel {
                 }
             }
 
-            CanvasPropertiesEvent.OnResetZoom -> _canvasScale.update { 1f }
             CanvasPropertiesEvent.OnIncrementZoom -> {
                 val zoomAmt = (_canvasScale.value + .1f).coerceIn(.3f..3f)
                 _canvasScale.update { zoomAmt }
@@ -221,17 +201,14 @@ class AppViewModel {
                 _canvasScale.update { updatedAmount }
             }
 
-            is CanvasPropertiesEvent.OnPanCanvas -> {
-                _canvasPan.update { panAmount -> panAmount + event.amount }
-            }
-
+            is CanvasPropertiesEvent.OnPanCanvas -> _canvasPan.update { panAmount -> panAmount + event.amount }
+            CanvasPropertiesEvent.OnResetZoom -> _canvasScale.update { 1f }
             CanvasPropertiesEvent.ToggleGridLinesVisibility -> _showGridLines.update { it.not() }
         }
     }
 
-    fun cleanUp() {
+    override fun onCleared() {
+        super.onCleared()
         Logger.d { "VIEW MODEL CLEARED" }
-        viewModelScope.cancel()
     }
-
 }

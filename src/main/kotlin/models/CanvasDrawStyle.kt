@@ -13,4 +13,13 @@ data class CanvasDrawStyle(
 ) {
     val isRounded: Boolean
         get() = roundness == CornerRoundnessOption.ROUNDED
+
+    fun onBackgroundColorChange(colorOptions: CanvasColorOptions): CanvasDrawStyle {
+        return if (colorOptions == CanvasColorOptions.BASE)
+            copy(background = colorOptions, backgroundFill = BackgroundFillOptions.NONE)
+        else if (backgroundFill == BackgroundFillOptions.NONE)
+            copy(background = colorOptions, backgroundFill = BackgroundFillOptions.SOLID)
+        else copy(background = colorOptions, backgroundFill = backgroundFill)
+    }
+
 }

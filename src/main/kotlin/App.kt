@@ -7,7 +7,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
@@ -19,16 +22,10 @@ import presentation.menu_options.ZoomAndUndoRedoOption
 import presentation.style_picker.CanvasDrawStylePicker
 
 @Composable
-fun App(modifier: Modifier = Modifier) {
-
-    val viewModel = remember { AppViewModel() }
-
-    DisposableEffect(viewModel) {
-        onDispose {
-            // cleans the viewmodel
-            viewModel.cleanUp()
-        }
-    }
+fun App(
+    viewModel: AppViewModel,
+    modifier: Modifier = Modifier,
+) {
 
     val snackBarState = remember { SnackbarHostState() }
 

@@ -36,13 +36,13 @@ fun DrawScope.drawBackground(
             val noOfVerticalLines = (boundingRect.width / difference).toInt()
 
             // horizontal
-            repeat(noOfHorizontalLines) {
+            repeat(noOfHorizontalLines + 1) {
                 val hStart = Offset(boundingRect.left, boundingRect.top + difference * it)
                 val hEnd = Offset(boundingRect.right, boundingRect.top + difference * it)
                 drawLine(color = fillColor, start = hStart, end = hEnd)
             }
             //vertical
-            repeat(noOfVerticalLines) {
+            repeat(noOfVerticalLines + 1) {
                 val vStart = Offset(boundingRect.left + difference * it, boundingRect.top)
                 val vEnd = Offset(boundingRect.left + difference * it, boundingRect.bottom)
                 drawLine(color = fillColor, start = vStart, end = vEnd)
@@ -55,7 +55,7 @@ fun DrawScope.drawBackground(
             val noOfHorizontalLines = (boundingRect.height / difference).toInt()
 
             // horizontal
-            repeat(noOfHorizontalLines) {
+            repeat(noOfHorizontalLines + 1) {
                 val hStart = Offset(boundingRect.left, boundingRect.top + difference * it)
                 val hEnd = Offset(boundingRect.right, boundingRect.top + difference * it)
                 drawLine(color = fillColor, start = hStart, end = hEnd)
