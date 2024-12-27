@@ -1,4 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     kotlin("jvm")
@@ -13,6 +15,11 @@ repositories {
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     google()
+}
+
+composeCompiler {
+    targetKotlinPlatforms = setOf(KotlinPlatformType.jvm)
+    featureFlags = setOf(ComposeFeatureFlag.StrongSkipping.disabled())
 }
 
 dependencies {

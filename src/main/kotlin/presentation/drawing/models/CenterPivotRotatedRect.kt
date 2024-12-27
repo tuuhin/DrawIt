@@ -17,8 +17,7 @@ data class CenterPivotRotatedRect(
 ) {
 
     private val normalizedRadians: Float
-        get() = radians % (2 * PI).toFloat()
-
+        get() = (((radians % (2 * PI)) + 2 * PI) % (2 * PI)).toFloat()
 
     private val center: Offset = rect.center
 
@@ -85,15 +84,21 @@ data class CenterPivotRotatedRect(
     }
 
     fun updatePointerPosition(position: Offset, density: Density): CanvasItemPointerPosition {
+
+        val cornerSide = when {
+            isOnTopRightBoundary(position) -> CornerSide.NORTH_EAST
+            isOnTopLeftBoundary(position) -> CornerSide.NORTH_WEST
+            isOnBottomLeftBoundary(position) -> CornerSide.SOUTH_WEST
+            isOnBottomRightBoundary(position) -> CornerSide.SOUTH_EAST
+            onTopBoundary(position) -> CornerSide.TOP
+            onLeftBoundary(position) -> CornerSide.LEFT
+            onRightBoundary(position) -> CornerSide.RIGHT
+            onBottomBoundary(position) -> CornerSide.BOTTOM
+            else -> CornerSide.NONE
+        }
+
         return CanvasItemPointerPosition(
-            onNECorner = isOnTopRightBoundary(position),
-            onNWCorner = isOnTopLeftBoundary(position),
-            onSWCorner = isOnBottomLeftBoundary(position),
-            onSECorner = isOnBottomRightBoundary(position),
-            onTBoundary = onTopBoundary(position),
-            onBBoundary = onBottomBoundary(position),
-            onLBoundary = onLeftBoundary(position),
-            onRBoundary = onRightBoundary(position),
+            corner = cornerSide,
             isRotateAxle = onRotationAxlePosition(position, density)
         )
     }

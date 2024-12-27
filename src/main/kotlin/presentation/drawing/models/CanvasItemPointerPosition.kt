@@ -11,39 +11,20 @@ import kotlin.math.acos
 import kotlin.math.roundToInt
 
 data class CanvasItemPointerPosition(
-    val onNECorner: Boolean = false,
-    val onNWCorner: Boolean = false,
-    val onSECorner: Boolean = false,
-    val onSWCorner: Boolean = false,
-    val onTBoundary: Boolean = false,
-    val onBBoundary: Boolean = false,
-    val onLBoundary: Boolean = false,
-    val onRBoundary: Boolean = false,
+    val corner: CornerSide = CornerSide.NONE,
     val isInside: Boolean = false,
     val isRotateAxle: Boolean = false,
 ) {
 
-    private val isVertical: Boolean
-        get() = onTBoundary || onBBoundary
-
-    private val isHorizontal: Boolean
-        get() = onLBoundary || onRBoundary
-
-    private val isCorner: Boolean
-        get() = onNECorner || onNWCorner || onSWCorner || onSECorner
-
     val isOnBoundary: Boolean
-        get() = isCorner || isVertical || isHorizontal
+        get() = corner != CornerSide.NONE
 
     val isNotOrBoundaryOrAxle: Boolean
         get() = !isOnBoundary || !isRotateAxle
 
-
     private fun evaluateCursor(rotation: Float): Int {
-        val normalize = (((rotation + PI / 8) % (2 * PI)) + 2 * PI) % (2 * PI)
-
-        val angleDegree = Math.toDegrees(normalize).roundToInt()
-        return when (angleDegree) {
+        val degree = Math.toDegrees(rotation.toDouble()).roundToInt()
+        return when (degree) {
             in 0..<45 -> Cursor.N_RESIZE_CURSOR
             in 45..<90 -> Cursor.NE_RESIZE_CURSOR
             in 90..<135 -> Cursor.E_RESIZE_CURSOR
@@ -59,17 +40,19 @@ data class CanvasItemPointerPosition(
         val cursor = when {
             isRotateAxle -> Cursor.HAND_CURSOR
             isInside -> Cursor.MOVE_CURSOR
-            onNECorner -> evaluateCursor(rotation + (PI / 4).toFloat())
-            onNWCorner -> evaluateCursor(rotation - (PI / 4).toFloat())
-            onSECorner -> evaluateCursor(rotation + (3 * PI / 4).toFloat())
-            onSWCorner -> evaluateCursor(rotation + (5 * PI / 4).toFloat())
-            onTBoundary -> evaluateCursor(rotation)
-            onBBoundary -> evaluateCursor(rotation + PI.toFloat())
-            onLBoundary -> evaluateCursor(rotation + (3 * PI / 2).toFloat())
-            onRBoundary -> evaluateCursor(rotation + (PI / 2).toFloat())
-            else -> null
+            else -> when (corner) {
+                CornerSide.NORTH_EAST -> evaluateCursor(rotation + (PI / 4).toFloat())
+                CornerSide.NORTH_WEST -> evaluateCursor(rotation + (7 * PI / 4).toFloat())
+                CornerSide.SOUTH_EAST -> evaluateCursor(rotation + (3 * PI / 4).toFloat())
+                CornerSide.SOUTH_WEST -> evaluateCursor(rotation + (5 * PI / 4).toFloat())
+                CornerSide.TOP -> evaluateCursor(rotation)
+                CornerSide.BOTTOM -> evaluateCursor(rotation + PI.toFloat())
+                CornerSide.LEFT -> evaluateCursor(rotation + (3 * PI / 2).toFloat())
+                CornerSide.RIGHT -> evaluateCursor(rotation + (PI / 2).toFloat())
+                else -> null
+            }
         }
-        return cursor?.let { PointerIcon(Cursor.getPredefinedCursor(it)) }
+        return cursor?.let(Cursor::getPredefinedCursor)?.let(::PointerIcon)
     }
 
     fun resetBoundaryPoints() = CanvasItemPointerPosition(isInside = isInside)
@@ -83,10 +66,10 @@ data class CanvasItemPointerPosition(
 
         val scaleFactor = item.scale / properties.canvasScale
         val scaledPosition = (pointerPosition - canvasCenter) * scaleFactor
-        val position = scaledPosition + canvasCenter - properties.panedCanvas
+        val positionOnCanvas = scaledPosition + canvasCenter - properties.panedCanvas
 
         val finalPosition = CenterPivotRotatedRect.rotatePoint(
-            position = position,
+            position = positionOnCanvas,
             pivot = center,
             radians = -item.rotateInRadians
         )
@@ -94,15 +77,16 @@ data class CanvasItemPointerPosition(
         //FIXME: Make a better way to rotate the stuff
         // Yes we can resize the elements but the angle making it difficult to resize them properly
         // holding it for now.
-        val newRect = when {
-            onNECorner -> copy(top = finalPosition.y, right = finalPosition.x)
-            onNWCorner -> copy(left = finalPosition.x, top = finalPosition.y)
-            onSECorner -> copy(right = finalPosition.x, bottom = finalPosition.y)
-            onSWCorner -> copy(left = finalPosition.x, bottom = finalPosition.y)
-            onLBoundary -> copy(left = finalPosition.x).apply { translate(Offset(0f, center.y - finalPosition.y)) }
-            onTBoundary -> copy(top = finalPosition.y).apply { translate(Offset(center.x - finalPosition.x, 0f)) }
-            onRBoundary -> copy(right = finalPosition.x).apply { translate(Offset(0f, -finalPosition.y)) }
-            onBBoundary -> copy(bottom = finalPosition.y).apply { translate(Offset(finalPosition.x, 0f)) }
+
+        val newRect = when (corner) {
+            CornerSide.NORTH_EAST -> copy(top = finalPosition.y, right = finalPosition.x)
+            CornerSide.NORTH_WEST -> copy(left = finalPosition.x, top = finalPosition.y)
+            CornerSide.SOUTH_EAST -> copy(right = finalPosition.x, bottom = finalPosition.y)
+            CornerSide.SOUTH_WEST -> copy(left = finalPosition.x, bottom = finalPosition.y)
+            CornerSide.TOP -> copy(top = finalPosition.y)
+            CornerSide.BOTTOM -> copy(bottom = finalPosition.y)
+            CornerSide.LEFT -> copy(left = finalPosition.x)
+            CornerSide.RIGHT -> copy(right = finalPosition.x)
             else -> this
         }
         return newRect
